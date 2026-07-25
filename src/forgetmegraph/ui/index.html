@@ -1,0 +1,293 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <meta name="description" content="Forget-Me-Graph turns DataHub lineage into approval-gated deletion, clean retraining, and verifiable evidence.">
+  <title>Forget-Me-Graph — Evidence Console</title>
+  <link rel="stylesheet" href="/assets/app.css">
+  <script src="/assets/app.js" defer></script>
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to workflow</a>
+  <div class="ambient ambient-one" aria-hidden="true"></div>
+  <div class="ambient ambient-two" aria-hidden="true"></div>
+
+  <header class="topbar">
+    <a class="brand" href="#top" aria-label="Forget-Me-Graph home">
+      <span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i></span>
+      <span>
+        <strong>Forget-Me-Graph</strong>
+        <small>VERIFIABLE DELETION ORCHESTRATION</small>
+      </span>
+    </a>
+    <nav class="journey-nav" aria-label="Demo journey">
+      <a href="#intake">Request</a>
+      <a href="#impact">Impact</a>
+      <a href="#plan">Plan</a>
+      <a href="#approval">Approve</a>
+      <a href="#verification">Verify</a>
+      <a href="#certificate">Certificate</a>
+    </nav>
+    <div class="system-pill" id="header-status" data-state="checking">
+      <span class="pulse" aria-hidden="true"></span>
+      <span>Checking live gates</span>
+    </div>
+  </header>
+
+  <main id="main">
+    <section class="hero" id="top">
+      <div class="hero-copy">
+        <div class="eyebrow"><span>DataHub-powered</span><span>Production ML Agents</span></div>
+        <h1>Trace one deletion.<br><em>Prove every consequence.</em></h1>
+        <p class="hero-lede">A scoped request becomes an exact lineage impact plan, real purge and rebuild work, clean-snapshot retraining, independent verification, and a tamper-evident certificate.</p>
+        <div class="hero-actions">
+          <a class="button primary" href="#intake">Start guarded demo <span aria-hidden="true">→</span></a>
+          <a class="button ghost" href="#live-proof">Inspect live proof</a>
+        </div>
+        <ul class="trust-row" aria-label="Safety properties">
+          <li><span>01</span> Synthetic data only</li>
+          <li><span>02</span> Explicit approval</li>
+          <li><span>03</span> Immediate rereads</li>
+        </ul>
+      </div>
+
+      <aside class="readiness-console" aria-labelledby="readiness-title">
+        <div class="console-header">
+          <div>
+            <span class="kicker">CURRENT ENVIRONMENT</span>
+            <h2 id="readiness-title">Execution gates</h2>
+          </div>
+          <button class="icon-button" id="refresh-readiness" type="button" aria-label="Refresh readiness">↻</button>
+        </div>
+        <div class="gate-list" id="gate-list" aria-live="polite">
+          <div class="gate"><span class="gate-icon">··</span><div><strong>Fixture marker</strong><small>Checking synthetic estate</small></div></div>
+          <div class="gate"><span class="gate-icon">··</span><div><strong>Exact DataHub catalog</strong><small>Checking 10 assets / 9 edges</small></div></div>
+          <div class="gate"><span class="gate-icon">··</span><div><strong>MCP capabilities</strong><small>Checking entity + lineage reads</small></div></div>
+        </div>
+        <div class="console-foot">
+          <span>Readiness never writes</span>
+          <code id="readiness-code">GET /api/readiness</code>
+        </div>
+      </aside>
+    </section>
+
+    <section class="proof-strip" aria-label="Coordinator verified evidence">
+      <div><strong>10</strong><span>catalog assets</span></div>
+      <div><strong>9</strong><span>lineage edges</span></div>
+      <div><strong>102</strong><span>foreign rows preserved</span></div>
+      <div><strong>200→503→200</strong><span>reset readiness proof</span></div>
+      <div><strong>SHA-256</strong><span>receipt-backed evidence</span></div>
+    </section>
+
+    <section class="workflow-section" id="intake">
+      <div class="section-heading">
+        <div><span class="step-number">01</span><span class="kicker">REQUEST INTAKE</span></div>
+        <h2>Scope the subject. Minimize the data.</h2>
+        <p>The raw selector crosses only the intake boundary. The visible workflow uses a deterministic pseudonymous token—never a customer record.</p>
+      </div>
+      <div class="intake-grid">
+        <form class="panel intake-card" id="request-form">
+          <div class="panel-heading">
+            <div><span class="status-dot safe"></span> Synthetic deletion request</div>
+            <span class="micro-badge">DISPOSABLE FIXTURE</span>
+          </div>
+          <label>Request ID
+            <input id="request-id" name="request_id" value="judge-demo-001" pattern="[A-Za-z0-9][A-Za-z0-9._-]{2,79}" required autocomplete="off">
+          </label>
+          <div class="form-row">
+            <label>Subject type
+              <input value="customer" disabled>
+            </label>
+            <label>Selector field
+              <input value="customer_id" disabled>
+            </label>
+            <label>Operator
+              <input value="equals" disabled>
+            </label>
+          </div>
+          <label>Scoped selector value
+            <div class="secret-input">
+              <input id="selector-value" name="selector_value" type="password" inputmode="numeric" pattern="[0-9]+" placeholder="Enter synthetic demo ID" required autocomplete="off" aria-describedby="selector-help">
+              <button id="toggle-selector" type="button" aria-label="Show selector temporarily">Show</button>
+            </div>
+            <small id="selector-help">Used in memory to build the plan; omitted from responses, evidence, and screenshots.</small>
+          </label>
+          <label>Policy basis
+            <select id="policy-basis" aria-label="Policy basis">
+              <option>Approved synthetic privacy-request demonstration</option>
+            </select>
+          </label>
+          <button class="button primary full" id="build-plan" type="submit">Build deterministic impact plan <span aria-hidden="true">→</span></button>
+        </form>
+
+        <aside class="privacy-card panel">
+          <span class="privacy-orbit" aria-hidden="true"><i></i><i></i><i></i></span>
+          <span class="kicker">PRIVACY BOUNDARY</span>
+          <h3>Raw value stops here.</h3>
+          <p>The planner receives a protected selector. DataHub receives URNs, metadata, status, and evidence hashes—not raw personal data.</p>
+          <dl>
+            <div><dt>Display identity</dt><dd id="selector-token-preview">subj_••••••••••••••••</dd></div>
+            <div><dt>Persisted raw value</dt><dd class="good">No</dd></div>
+            <div><dt>External model access</dt><dd class="good">None</dd></div>
+          </dl>
+        </aside>
+      </div>
+    </section>
+
+    <section class="workflow-section" id="impact">
+      <div class="section-heading compact">
+        <div><span class="step-number">02</span><span class="kicker">LIVE IMPACT GRAPH</span></div>
+        <h2>Follow the blast radius into learned artifacts.</h2>
+        <p>Dataset-level lineage defines scope. Explicit key mappings determine whether a subject can actually be found and handled downstream.</p>
+      </div>
+      <div class="graph-shell panel">
+        <div class="graph-toolbar">
+          <div class="legend"><span><i class="dot source"></i> Source</span><span><i class="dot derived"></i> Derived</span><span><i class="dot learned"></i> Learned</span><span><i class="dot exempt"></i> Exempt</span></div>
+          <div id="graph-count">Loading exact catalog…</div>
+        </div>
+        <div class="graph-grid" id="graph-grid" aria-label="DataHub impact graph"></div>
+        <div class="graph-caption"><span>DATAHUB CONTEXT</span><span>Every branch requires a versioned selector mapping</span></div>
+      </div>
+    </section>
+
+    <section class="workflow-section" id="plan">
+      <div class="section-heading compact">
+        <div><span class="step-number">03</span><span class="kicker">ACTION PLAN</span></div>
+        <h2>Translate lineage into executable work.</h2>
+        <p>Rules—not narration—select purge, rebuild, delete, evict, replace, retrain, or exempt. A missing mapping blocks its branch.</p>
+      </div>
+      <div class="panel plan-panel">
+        <div class="plan-summary" id="plan-summary">
+          <div><span>Plan state</span><strong>Awaiting request</strong></div>
+          <div><span>Bound hash</span><code>—</code></div>
+          <div><span>Approval</span><strong>Required</strong></div>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Artifact</th><th>Action</th><th>Selector</th><th>State</th><th>Why</th></tr></thead>
+            <tbody id="plan-table"><tr class="empty-row"><td colspan="5">Build a request to generate the deterministic plan.</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <section class="workflow-section approval-section" id="approval">
+      <div class="approval-copy">
+        <div><span class="step-number">04</span><span class="kicker">HUMAN APPROVAL GATE</span></div>
+        <h2>Bind consent to the exact plan hash.</h2>
+        <p>Execution refuses stale approval, unknown targets, missing fixture markers, or assets outside <code>forgetme.</code>.</p>
+      </div>
+      <form class="approval-card panel" id="approval-form">
+        <label>Approver identity
+          <input id="approver" value="demo-privacy-operator" pattern="[A-Za-z0-9 ._@-]{3,80}" required autocomplete="off">
+        </label>
+        <label class="check-row">
+          <input type="checkbox" id="approval-check" required>
+          <span><strong>I approve this exact plan.</strong><small>Reset and mutate only the marked synthetic fixture, then verify every in-scope descendant.</small></span>
+        </label>
+        <div class="run-options">
+          <label class="mini-check"><input type="checkbox" id="reset-fixture" checked> Reset synthetic fixture first</label>
+          <label class="mini-check"><input type="checkbox" id="require-datahub" checked> Require live DataHub read/write</label>
+        </div>
+        <button class="button danger full" id="run-workflow" type="submit" disabled>Approve &amp; execute guarded workflow</button>
+        <p class="approval-note" id="approval-note">Build a plan before approval can be granted.</p>
+      </form>
+    </section>
+
+    <section class="workflow-section" id="execution">
+      <div class="section-heading compact">
+        <div><span class="step-number">05</span><span class="kicker">REAL EXECUTION</span></div>
+        <h2>Watch the evidence chain advance.</h2>
+        <p>Adapters mutate disposable local artifacts. DataHub context gates the run; supported SDK writeback happens only after independent verification.</p>
+      </div>
+      <div class="execution-grid">
+        <div class="panel timeline" id="execution-timeline">
+          <div class="timeline-item" data-phase="context"><span>1</span><div><strong>Read live catalog context</strong><small>Exact entities + downstream lineage via MCP</small></div><b>WAITING</b></div>
+          <div class="timeline-item" data-phase="purge"><span>2</span><div><strong>Purge and rebuild stores</strong><small>DuckDB, vectors, cache, export, snapshot</small></div><b>WAITING</b></div>
+          <div class="timeline-item" data-phase="retrain"><span>3</span><div><strong>Retrain toy classifier</strong><small>Clean snapshot, retired manifest, active model switch</small></div><b>WAITING</b></div>
+          <div class="timeline-item" data-phase="verify"><span>4</span><div><strong>Independently verify</strong><small>Fresh queries—not adapter success messages</small></div><b>WAITING</b></div>
+          <div class="timeline-item" data-phase="writeback"><span>5</span><div><strong>Write and reread DataHub evidence</strong><small>Allowlisted properties + exact immediate comparison</small></div><b>WAITING</b></div>
+        </div>
+        <aside class="panel execution-aside">
+          <span class="kicker">TRUTHFUL SCOPE</span>
+          <h3>Clean retraining ≠ formal unlearning.</h3>
+          <p>The old manifest is retired and the active model references a rebuilt subject-free snapshot. The certificate states this precisely.</p>
+          <div class="claim-chip">No universal forgetting claim</div>
+        </aside>
+      </div>
+    </section>
+
+    <section class="workflow-section" id="verification">
+      <div class="section-heading compact">
+        <div><span class="step-number">06</span><span class="kicker">VERIFICATION MATRIX</span></div>
+        <h2>Evidence decides the status.</h2>
+        <p>Verified, failed, blocked, exempt, and out-of-scope are distinct outcomes. One exempt aggregate prevents an unqualified “complete” claim.</p>
+      </div>
+      <div class="panel verification-panel">
+        <div class="verification-metrics" id="verification-metrics">
+          <div><strong>—</strong><span>verified</span></div><div><strong>—</strong><span>failed</span></div><div><strong>—</strong><span>limited</span></div>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Artifact</th><th>Action</th><th>Before</th><th>After</th><th>Evidence status</th></tr></thead>
+            <tbody id="verification-table"><tr class="empty-row"><td colspan="5">Run the approved plan to populate independent verification.</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <section class="workflow-section certificate-section" id="certificate">
+      <div class="section-heading compact">
+        <div><span class="step-number">07</span><span class="kicker">EVIDENCE CERTIFICATE</span></div>
+        <h2>Hand auditors a proof trail, not a promise.</h2>
+      </div>
+      <div class="certificate-grid">
+        <article class="certificate-card panel" id="certificate-card">
+          <div class="certificate-seal" aria-hidden="true"><span>✓</span></div>
+          <span class="kicker">LATEST WORKFLOW RESULT</span>
+          <h3 id="certificate-status">Awaiting approved execution</h3>
+          <p id="certificate-description">The certificate will summarize verified work, limitations, plan binding, and DataHub writeback.</p>
+          <dl class="hash-list">
+            <div><dt>Certificate SHA-256</dt><dd><code id="certificate-hash">—</code></dd></div>
+            <div><dt>Plan SHA-256</dt><dd><code id="certificate-plan-hash">—</code></dd></div>
+            <div><dt>DataHub receipt</dt><dd id="writeback-state">—</dd></div>
+          </dl>
+          <div class="certificate-actions" id="certificate-actions"></div>
+        </article>
+        <aside class="evidence-stack panel" id="live-proof">
+          <span class="kicker">COORDINATOR-VERIFIED LIVE PROOF</span>
+          <h3>Reproducible beyond one happy path.</h3>
+          <div class="proof-list" id="coordinator-proof">
+            <div><span>Primary guarded run</span><code>Loading…</code></div>
+            <div><span>Concurrent private MCP run</span><code>Loading…</code></div>
+            <div><span>Read-only snapshot</span><code>Loading…</code></div>
+          </div>
+          <p>Reset preserved 102 foreign Lifeboat aspect rows byte-for-byte. Restore reactivated all 10 project datasets and 9 edges.</p>
+        </aside>
+      </div>
+    </section>
+
+    <section class="claims-section" id="claims">
+      <div>
+        <span class="kicker">CLAIMS YOU CAN DEFEND</span>
+        <h2>What this demo proves—and what it does not.</h2>
+      </div>
+      <div class="claims-grid">
+        <article><span class="claim-icon yes">✓</span><h3>Implemented</h3><p>Live lineage reads, deterministic planning, real disposable mutations, clean retraining, independent verification, and supported DataHub writeback.</p></article>
+        <article><span class="claim-icon limit">≈</span><h3>Limited</h3><p>Evidence covers the synthetic assets represented in the demo graph. One subject-unaddressable aggregate is explicitly exempt.</p></article>
+        <article><span class="claim-icon no">×</span><h3>Not claimed</h3><p>Universal machine forgetting, legal compliance, discovery of uncataloged assets, or production handling of real personal information.</p></article>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="brand footer-brand"><span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i></span><span><strong>Forget-Me-Graph</strong><small>DataHub-powered verified deletion</small></span></div>
+    <p>Synthetic data only · Apache 2.0 · Built for the DataHub Agent Hackathon</p>
+    <a href="#top">Back to top ↑</a>
+  </footer>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+</body>
+</html>

@@ -92,3 +92,28 @@ downstream coverage from both entrypoints.
 No seed receipt is trusted as current state, and readiness never writes. Before seed, after soft
 reset, or after metadata/lineage drift it returns 503 with `datahub_catalog=missing_or_invalid`.
 Successful seed or restore must make the same live checks pass before readiness returns 200.
+
+## ADR-010: Same-origin judge console reuses the deterministic core
+
+**Status:** Accepted
+
+The judge console is served by the existing FastAPI process and calls narrow plan, execution,
+overview, readiness, and evidence-download endpoints. It does not reimplement workflow logic in the
+browser. The plan endpoint returns only a protected token and deterministic decisions; execution
+requires the same request selector plus the exact approved plan hash, and rejects a stale hash
+before fixture reset. Non-local environments force the live DataHub gate even if a client asks to
+disable it. Evidence downloads use a fixed filename allowlist.
+
+This keeps browser state ephemeral, avoids a second credential boundary, and makes UI claims match
+the CLI workflow. The process-local execution lock is appropriate for the demo but is not presented
+as durable job orchestration.
+
+## ADR-011: Public evidence contains provenance hashes, not private receipts
+
+**Status:** Accepted
+
+The repository records coordinator-owned live evidence as exact SHA-256 values and bounded
+observations in `examples/live-evidence-summary.json`. It does not copy runtime receipts, raw MCP
+responses, selector-derived values, credentials, or private infrastructure evidence into Git.
+Plan/request/certificate examples are clearly labeled redacted and non-runtime so they cannot be
+mistaken for executed proof. Operational evidence remains under configured runtime state roots.

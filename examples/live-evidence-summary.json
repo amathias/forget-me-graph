@@ -1,0 +1,42 @@
+{
+  "evidence_owner": "portfolio_coordinator",
+  "evidence_scope": "deployed live validation; hashes only",
+  "deployed_product_commit": "8a24421f99622140bfa3e75c8db7ec3923f100de",
+  "catalog": {
+    "active_datasets": 10,
+    "lineage_edges": 9,
+    "namespace": "forgetme."
+  },
+  "primary_guarded_run": {
+    "status": "verified_with_limitations",
+    "certificate_sha256": "0dfc8e519e3cb3d30e037aa46b1b030e06a67d061023ec19ff70a93e61d78e1",
+    "certificate_json_file_sha256": "9f1c8c5897a3e04da42924beea7942785ed88736a3da0a153746b0d51ba16b55",
+    "certificate_markdown_file_sha256": "fc20ca8b44c9e1fbbe5b66390034fd208b0d5331d91fbecb3a701e62387f49be",
+    "datahub_read_receipt_sha256": "25dcba1cec326b4f6bf09f1ac4cab3c3a6b2fc4cf6fc838c7ff6e16c9051d7a4",
+    "datahub_write_reread_receipt_sha256": "15dabe47bee2136c0f5915bf4a66c2fcd6e474c25aa4844cc72e8b2d39e8d5c5"
+  },
+  "catalog_lifecycle": {
+    "reset_receipt_sha256_prefix": "103d2599",
+    "restore_receipt_sha256_prefix": "60dbf681",
+    "foreign_lifeboat_rows_preserved_byte_for_byte": 102,
+    "readiness_transition": "200 restored -> 503 reset -> 200 restored"
+  },
+  "concurrent_run": {
+    "request_id": "coordinator-concurrency-live-002",
+    "certificate_sha256": "f5633f7f8579d58cae5ea4a91204027ba6b13dcbcd3f529c4617db655b342268",
+    "datahub_read_receipt_sha256": "5e210e715a49df004997da437110d1c0c9631b2f070cd0be4a740304ddeb239b",
+    "datahub_write_reread_receipt_sha256": "6776e2e181cd49a94ae1026c544693696b7c5af536065d2b7d1f31e78c70fc73",
+    "isolation": "separate private pinned MCP workers"
+  },
+  "read_only_snapshot": {
+    "snapshot_id": "snap-06d2125eaa1106558",
+    "mounted_read_only": true,
+    "matched_certificate_sha256": "f5633f7f8579d58cae5ea4a91204027ba6b13dcbcd3f529c4617db655b342268"
+  },
+  "redaction": {
+    "contains_runtime_receipts": false,
+    "contains_selectors": false,
+    "contains_credentials": false,
+    "contains_raw_mcp_responses": false
+  }
+}

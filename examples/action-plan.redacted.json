@@ -1,0 +1,64 @@
+{
+  "example_kind": "redacted_non_runtime",
+  "request_id": "example-request-001",
+  "plan_sha256": "<redacted-plan-sha256>",
+  "approval_bound_to_plan_sha256": true,
+  "summary": {
+    "exact_catalog_assets": 10,
+    "lineage_edges": 9,
+    "ready_actions": 9,
+    "explicit_exemptions": 1
+  },
+  "decisions": [
+    {
+      "artifact_type": "raw_dataset",
+      "action": "row_purge",
+      "status": "ready",
+      "selector_field": "customer_id"
+    },
+    {
+      "artifact_type": "derived_dataset",
+      "action": "rebuild",
+      "status": "ready",
+      "selector_field": "customer_id"
+    },
+    {
+      "artifact_type": "vector_index",
+      "action": "vector_delete_reindex",
+      "status": "ready",
+      "selector_field": "customer_id"
+    },
+    {
+      "artifact_type": "cache",
+      "action": "cache_evict",
+      "status": "ready",
+      "selector_field": "subject_token"
+    },
+    {
+      "artifact_type": "export",
+      "action": "export_replace",
+      "status": "ready",
+      "selector_field": "customer_id"
+    },
+    {
+      "artifact_type": "training_snapshot",
+      "action": "rebuild",
+      "status": "ready",
+      "selector_field": "customer_id"
+    },
+    {
+      "artifact_type": "ml_model",
+      "action": "retrain",
+      "status": "ready",
+      "selector_field": "subject_token"
+    },
+    {
+      "artifact_type": "aggregate",
+      "action": "exempt",
+      "status": "exempt",
+      "selector_field": null,
+      "reason": "The aggregate contains no subject-addressable key."
+    }
+  ],
+  "notice": "Repeated decisions are summarized; this is not an execution receipt."
+}

@@ -1,0 +1,14 @@
+{
+  "example_kind": "redacted_non_runtime",
+  "request_id": "example-request-001",
+  "subject_type": "customer",
+  "selector": {
+    "field": "customer_id",
+    "operator": "equals",
+    "token": "<redacted-protected-token>",
+    "raw_value_persisted": false
+  },
+  "policy_basis": "Approved synthetic privacy-request demonstration",
+  "approval_required": true,
+  "notice": "The raw synthetic selector is intentionally omitted."
+}

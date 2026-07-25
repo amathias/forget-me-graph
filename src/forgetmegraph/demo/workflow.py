@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 import asyncio
 import json
+from dataclasses import dataclass
 from pathlib import Path
 
 from forgetmegraph.config import Settings
@@ -15,7 +16,7 @@ from forgetmegraph.context.datahub import (
 )
 from forgetmegraph.context.provider import FixtureContextProvider
 from forgetmegraph.demo.seed import DEMO_SECRET, seed_estate
-from forgetmegraph.domain.models import SubjectSelector
+from forgetmegraph.domain.models import ActionPlan, Artifact, ProtectedSelector, SubjectSelector
 from forgetmegraph.execution.engine import execute_plan
 from forgetmegraph.execution.models import Approval
 from forgetmegraph.planning.mappings import MappingRegistry
@@ -27,35 +28,65 @@ CUSTOMERS = "urn:li:dataset:(urn:li:dataPlatform:duckdb,forgetme.raw.customers,P
 TICKETS = "urn:li:dataset:(urn:li:dataPlatform:duckdb,forgetme.raw.tickets,PROD)"
 
 
-def run_workflow(
+@dataclass(frozen=True)
+class PreparedDemoWorkflow:
+    plan: ActionPlan
+    selector: ProtectedSelector
+    artifacts: tuple[Artifact, ...]
+
+
+def prepare_demo_workflow(
     *,
-    root: Path,
     project_root: Path,
-    approver: str,
-    request_id: str = "req-demo-001",
+    request_id: str,
+    selector_value: str,
     selector_secret: str = DEMO_SECRET,
-    seed: bool = False,
-    require_datahub: bool = False,
-    settings: Settings | None = None,
-) -> EvidenceCertificate:
-    if seed:
-        seed_estate(root, selector_secret=selector_secret)
+) -> PreparedDemoWorkflow:
     context = FixtureContextProvider(project_root / "demo/metadata/graph.json")
-    artifacts = context.artifacts()
-    edges = context.downstream_edges()
+    artifacts = tuple(context.artifacts())
     mappings = MappingRegistry.from_json(project_root / "demo/selector-mappings.json")
     protector = SelectorProtector(selector_secret)
     selector = protector.protect(
-        SubjectSelector(subject_type="customer", field="customer_id", value="42")
+        SubjectSelector(subject_type="customer", field="customer_id", value=selector_value)
     )
     plan = build_action_plan(
         request_id=request_id,
         selector=selector,
         entrypoint_urns=[CUSTOMERS, TICKETS],
         artifacts=artifacts,
-        edges=edges,
+        edges=context.downstream_edges(),
         mappings=mappings,
     )
+    return PreparedDemoWorkflow(plan=plan, selector=selector, artifacts=artifacts)
+
+
+def run_workflow(
+    *,
+    root: Path,
+    project_root: Path,
+    approver: str,
+    request_id: str = "req-demo-001",
+    selector_value: str = "42",
+    selector_secret: str = DEMO_SECRET,
+    expected_plan_hash: str | None = None,
+    seed: bool = False,
+    require_datahub: bool = False,
+    settings: Settings | None = None,
+) -> EvidenceCertificate:
+    prepared = prepare_demo_workflow(
+        project_root=project_root,
+        request_id=request_id,
+        selector_value=selector_value,
+        selector_secret=selector_secret,
+    )
+    plan = prepared.plan
+    selector = prepared.selector
+    artifacts = prepared.artifacts
+    protector = SelectorProtector(selector_secret)
+    if expected_plan_hash is not None and expected_plan_hash != plan.plan_hash:
+        raise ValueError("approved plan hash does not match the current deterministic plan")
+    if seed:
+        seed_estate(root, selector_secret=selector_secret)
     read_receipt = None
     live_settings = settings or Settings.from_env()
     if require_datahub:
@@ -139,11 +170,17 @@ def main() -> None:
         help="Fail closed unless live MCP context and verified SDK writeback both succeed.",
     )
     args = parser.parse_args()
+    selector_secret = settings.selector_secret
+    if selector_secret is None:
+        if settings.app_env not in {"local", "test"}:
+            parser.error("FMG_SELECTOR_SECRET is required outside local/test mode")
+        selector_secret = DEMO_SECRET
     certificate = run_workflow(
         root=args.root,
         project_root=args.project_root,
         approver=args.approved_by,
         request_id=args.request_id,
+        selector_secret=selector_secret,
         seed=args.seed,
         require_datahub=args.require_datahub,
         settings=settings,

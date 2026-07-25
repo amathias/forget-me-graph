@@ -21,6 +21,7 @@ class Settings:
     datahub_urn_prefix: str
     datahub_probe_urn: str
     demo_fixture_root: Path
+    selector_secret: str | None
 
     @classmethod
     def from_env(cls) -> Settings:
@@ -42,4 +43,5 @@ class Settings:
                 "urn:li:dataset:(urn:li:dataPlatform:duckdb,forgetme.raw.customers,PROD)",
             ),
             demo_fixture_root=Path(os.getenv("DEMO_FIXTURE_ROOT", "demo/fixtures/forget-me-graph")),
+            selector_secret=os.getenv("FMG_SELECTOR_SECRET") or None,
         )

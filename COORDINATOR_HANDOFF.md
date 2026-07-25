@@ -22,15 +22,15 @@ not deploy, access EC2, request a token value, or modify another workspace.
 
 | Field | Current value |
 |---|---|
-| Status | Live backend vertical slice deployed and coordinator-verified |
-| Milestone | Phases 0-4 complete; remaining milestone is the Phase 5/6 judge-facing UI, demo, and submission hardening |
+| Status | Live backend evidence preserved; judge-facing UI verified locally and awaiting promotion |
+| Milestone | Phases 0-5 complete; Phase 6 public submission packaging follows in the next documentation milestone |
 | Current deployed candidate | `8a24421f99622140bfa3e75c8db7ec3923f100de` |
 | Prior deployed commits | `477604258142f460bc1946b56f9c685d3cd9e61b` and `478b54128649d68c17454d7562290b30e6c2950e` |
 | Prior live findings | `4776042` failed closed on incomplete lineage; `478b541` exposed the absent/reset readiness false positive fixed by `8a24421` |
-| Documentation-only handoff commit | Reported by `git rev-parse HEAD` after this handoff is committed; product deployment remains `8a24421` |
+| Judge UI candidate | This commit as reported by `git rev-parse HEAD`; deployed backend remains `8a24421` until coordinator promotion |
 | Build command | `python -m pip install -e ".[dev,datahub]"` |
 | Test command | `python -m ruff check src tests; python -m pytest --cov=forgetmegraph --cov-report=term-missing -q` |
-| Test evidence | 29 passing tests, 89% total coverage, Ruff clean |
+| Test evidence | 39 passing tests, 89% total coverage, Ruff clean, JavaScript syntax clean, wheel contains all UI assets |
 | Local demo result | `verified_with_limitations` because the subject-unaddressable aggregate is explicitly exempt |
 | Live evidence | Coordinator-owned deployed evidence passed; exact hashes are recorded below |
 
@@ -75,6 +75,45 @@ These results were captured by the portfolio coordinator against deployed produc
 
 Post-evidence snapshot `snap-06d2125eaa1106558` was mounted read-only, and its certificate hash
 matched `f5633f7f8579d58cae5ea4a91204027ba6b13dcbcd3f529c4617db655b342268` exactly.
+
+## Judge-facing console milestone
+
+The same FastAPI process now serves a seven-stage evidence console at `/`. It calls the real
+planner, executor, verifier, readiness probe, and DataHub integration; there is no simulated client
+workflow. New endpoints are:
+
+- `GET /api/demo/overview` — exact executable graph, mappings, defensible claims, and public-safe
+  coordinator evidence hashes;
+- `POST /api/demo/plan` — protected selector metadata, deterministic decisions, and plan SHA-256;
+- `POST /api/demo/run` — explicit approval plus exact plan-hash execution;
+- `GET /api/demo/evidence/{request_id}/{file_name}` — exact allowlisted certificate/receipt
+  downloads.
+
+Safety properties added for the UI path:
+
+- selector request fields are `repr=False`, validation errors are generic, and responses omit the
+  raw value;
+- the browser clears the selector field after planning, stores it only in page memory until the
+  approved run, and uses no web storage, analytics, or console logging;
+- a stale plan hash is rejected before fixture reset or mutation;
+- local/test mode can demonstrate real disposable adapters without DataHub, but non-local mode
+  forces the live DataHub gate even when the client asks to disable it;
+- non-local planning/readiness fail closed unless `FMG_SELECTOR_SECRET` is supplied out of band;
+- execution is process-serialized for the demo, and evidence downloads accept only four exact
+  filenames plus validated opaque request IDs.
+
+### Promotion requirement introduced by this milestone
+
+Supply `FMG_SELECTOR_SECRET` through the coordinator's secret mechanism to every non-local app
+container. Do not echo it or place it in Git, container arguments, screenshots, or handoffs. With
+`APP_ENV` outside `local`/`test`, `/api/readiness` now reports
+`selector_protection=missing` and returns 503 until that variable is present. No other dependency,
+port, catalog namespace, DataHub operation, or deployment topology changed.
+
+The package build verified that `index.html`, `app.css`, and `app.js` are present in the wheel. The
+UI regression suite proves redacted planning/validation, approval refusal, stale-plan refusal before
+reset, local end-to-end execution and downloads, unallowlisted download refusal, no browser storage
+or logging calls, exact coordinator-hash presentation, and the non-local DataHub/secret gates.
 
 ## Exact tunnel, configuration, and live sequence
 
@@ -266,23 +305,16 @@ Automated tests prove:
 
 ## Current deployment and remaining milestone
 
-- The current deployed product candidate is
-  `8a24421f99622140bfa3e75c8db7ec3923f100de`.
-- The live seed, approved workflow, DataHub write/immediate reread, reset, restore, readiness
-  transitions, Lifeboat isolation, concurrent private-MCP run, and read-only snapshot verification
-  have passed with the coordinator-owned hashes above.
-- This documentation-only successor commit does not require a product deployment; it records the
-  evidence while leaving `8a24421` as the deployed application candidate.
-- The coordinator continues to own AWS, secrets, deployment, rollback, and evidence retention. No
-  credential value was requested or recorded here.
-- No further backend fix is requested by the coordinator.
-
-Phases 0-4 of `BUILD_PLAN.md` now have deployed evidence. The remaining project milestone is the
-Phase 5/6 judge-facing and submission package:
-
-1. Present the request, live DataHub impact graph and selector mappings, honest action plan,
-   approval, execution, verification matrix, certificate, and writeback in a judge-facing UI.
-2. Package redacted examples, screenshots, and the coordinator-owned evidence hashes without
-   exposing selectors or secrets.
-3. Record the public demo under the 2:45 target and complete the repository/Devpost availability,
-   Apache 2.0 license, claims, privacy, and final rules audit.
+- The coordinator-verified backend deployment remains exact commit
+  `8a24421f99622140bfa3e75c8db7ec3923f100de`; all seed/workflow/write/reread/reset/restore,
+  readiness-transition, Lifeboat isolation, concurrency, and snapshot evidence above remains valid
+  and unchanged.
+- The judge-console candidate is this commit as returned by `git rev-parse HEAD`. It was built and
+  tested locally only. This project did not access AWS, deploy, request a token, or modify another
+  workspace.
+- Promotion requires one new out-of-band value: `FMG_SELECTOR_SECRET` in every non-local app
+  container. The coordinator continues to own secrets, AWS, deployment, rollback, public URL, and
+  live recording evidence.
+- Phase 6 public README, recording script, social card, Devpost copy, and
+  final claims/privacy audit will be delivered as the next documentation milestone. No backend
+  change is expected in that milestone.

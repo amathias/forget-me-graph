@@ -77,3 +77,29 @@ def test_readiness_performs_live_capability_probe(monkeypatch, tmp_path) -> None
         "get_entities",
         "get_lineage",
     ]
+
+
+def test_readiness_fails_closed_without_nonlocal_selector_secret(monkeypatch, tmp_path) -> None:
+    fixture = tmp_path / "forget-me-graph"
+    fixture.mkdir()
+    (fixture / ".forgetmegraph-demo").write_text("synthetic disposable demo artifacts\n")
+    monkeypatch.setenv("APP_ENV", "production")
+    monkeypatch.setenv("DEMO_FIXTURE_ROOT", str(fixture))
+    monkeypatch.delenv("FMG_SELECTOR_SECRET", raising=False)
+
+    async def successful_probe(settings):
+        return DataHubCapabilityStatus(
+            ready=True,
+            gms="connected",
+            mcp="connected",
+            catalog="ready",
+            capabilities=["get_entities", "get_lineage"],
+        )
+
+    monkeypatch.setattr("forgetmegraph.api.probe_datahub", successful_probe)
+
+    response = TestClient(app).get("/api/readiness")
+
+    assert response.status_code == 503
+    assert response.json()["checks"]["selector_protection"] == "missing"
+    assert response.json()["blockers"] == ["selector protection is not configured"]
