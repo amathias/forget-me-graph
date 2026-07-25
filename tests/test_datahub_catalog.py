@@ -1,17 +1,23 @@
+import asyncio
 import json
 import subprocess
 import sys
+from dataclasses import replace
 from pathlib import Path
 
 import pytest
 
 from forgetmegraph.config import Settings
+from forgetmegraph.context import datahub as datahub_context
 from forgetmegraph.context.datahub import DataHubIntegrationError
 from forgetmegraph.demo.datahub_catalog import (
     CUSTOMERS,
     DOMAIN_URN,
+    EXPECTED_ARTIFACTS,
     EXPECTED_EDGES,
+    SUMMARY,
     TAG_URN,
+    TICKETS,
     load_catalog_fixture,
     require_catalog_settings,
     seed_datahub_catalog,
@@ -29,6 +35,9 @@ class FakeCatalogGraph:
         self.aspects: dict[tuple[str, type[object]], object] = {}
         self.emitted: list[object] = []
         self.soft_status_calls: list[tuple[str, bool, str]] = []
+
+    def test_connection(self) -> None:
+        return None
 
     def emit(self, item: object) -> None:
         entity_urn = item.entityUrn
@@ -131,6 +140,98 @@ def test_seed_reset_restore_are_exact_idempotent_and_receipted(tmp_path) -> None
     assert "authorization" not in serialized
     assert "bearer" not in serialized
     assert "secret" not in serialized
+
+
+class FakeReadinessMcpClient:
+    def __init__(self) -> None:
+        self.calls: list[tuple[str, dict[str, object]]] = []
+
+    async def list_tools(self) -> list[str]:
+        return ["get_entities", "get_lineage"]
+
+    async def call_tool(self, name: str, arguments: dict[str, object]) -> object:
+        self.calls.append((name, arguments))
+        if name == "get_entities":
+            return [{"urn": urn} for urn in sorted(EXPECTED_ARTIFACTS)]
+        return {
+            "searchResults": [
+                {"entity": {"urn": urn}, "degree": 1} for urn in sorted(EXPECTED_ARTIFACTS)
+            ]
+        }
+
+
+def test_readiness_fails_preseed_and_post_reset_then_recovers(monkeypatch) -> None:
+    settings = replace(
+        _settings(),
+        datahub_gms_url="http://127.0.0.1:8080",
+        datahub_mcp_url="http://127.0.0.1:8000/mcp",
+        datahub_token="test-only-token",
+    )
+    fixture = _fixture()
+    graph = FakeCatalogGraph(set(fixture.urns))
+    mcp = FakeReadinessMcpClient()
+    monkeypatch.setattr(datahub_context, "create_graph_client", lambda **kwargs: graph)
+    monkeypatch.setattr(datahub_context, "StreamableHttpMcpClient", lambda **kwargs: mcp)
+
+    preseed = asyncio.run(datahub_context.probe_datahub(settings))
+
+    assert preseed.ready is False
+    assert preseed.catalog == "missing_or_invalid"
+    assert preseed.mcp == "unverified"
+    assert mcp.calls == []
+
+    seed_datahub_catalog(graph, fixture, settings=settings)
+    mutation_counts = (len(graph.emitted), len(graph.soft_status_calls))
+    seeded = asyncio.run(datahub_context.probe_datahub(settings))
+
+    assert seeded.ready is True
+    assert seeded.catalog == "ready"
+    assert seeded.capabilities == ["get_entities", "get_lineage"]
+    assert (len(graph.emitted), len(graph.soft_status_calls)) == mutation_counts
+    entity_call = next(call for call in mcp.calls if call[0] == "get_entities")
+    assert set(entity_call[1]["urns"]) == set(EXPECTED_ARTIFACTS)
+    lineage_calls = [call for call in mcp.calls if call[0] == "get_lineage"]
+    assert {call[1]["urn"] for call in lineage_calls} == {CUSTOMERS, TICKETS}
+
+    from datahub.metadata.schema_classes import DatasetPropertiesClass, UpstreamLineageClass
+
+    customer_properties = graph.get_aspect(CUSTOMERS, DatasetPropertiesClass)
+    graph.aspects[(CUSTOMERS, DatasetPropertiesClass)] = DatasetPropertiesClass(
+        name="wrong.fixture.name",
+        customProperties=customer_properties.customProperties,
+    )
+    calls_before_metadata_probe = list(mcp.calls)
+    metadata_drift = asyncio.run(datahub_context.probe_datahub(settings))
+    assert metadata_drift.ready is False
+    assert metadata_drift.catalog == "missing_or_invalid"
+    assert mcp.calls == calls_before_metadata_probe
+
+    seed_datahub_catalog(graph, fixture, settings=settings)
+    graph.aspects[(SUMMARY, UpstreamLineageClass)] = UpstreamLineageClass(upstreams=[])
+    calls_before_lineage_probe = list(mcp.calls)
+    lineage_drift = asyncio.run(datahub_context.probe_datahub(settings))
+    assert lineage_drift.ready is False
+    assert lineage_drift.catalog == "missing_or_invalid"
+    assert mcp.calls == calls_before_lineage_probe
+
+    seed_datahub_catalog(graph, fixture, settings=settings)
+    reset_receipt = set_catalog_soft_deleted(graph, fixture, removed=True)
+    assert reset_receipt.verified is True
+    assert len(reset_receipt.observed_removed) == 10
+    assert all(reset_receipt.observed_removed.values())
+    calls_before_reset_probe = list(mcp.calls)
+    reset = asyncio.run(datahub_context.probe_datahub(settings))
+
+    assert reset.ready is False
+    assert reset.catalog == "missing_or_invalid"
+    assert reset.mcp == "unverified"
+    assert mcp.calls == calls_before_reset_probe
+
+    set_catalog_soft_deleted(graph, fixture, removed=False)
+    restored = asyncio.run(datahub_context.probe_datahub(settings))
+
+    assert restored.ready is True
+    assert restored.catalog == "ready"
 
 
 def test_catalog_fixture_rejects_foreign_namespace_before_emit(tmp_path) -> None:

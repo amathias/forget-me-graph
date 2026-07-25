@@ -31,8 +31,8 @@ async def readiness(response: Response) -> dict[str, object]:
     blockers: list[str] = []
     if not fixture_ready:
         blockers.append("demo fixture is not seeded")
-    if datahub.blocker:
-        blockers.append(datahub.blocker)
+    if not datahub.ready:
+        blockers.append(datahub.blocker or "DataHub readiness verification failed")
     ready = not blockers
     if not ready:
         response.status_code = status.HTTP_503_SERVICE_UNAVAILABLE
@@ -43,6 +43,7 @@ async def readiness(response: Response) -> dict[str, object]:
             "fixture": "ready" if fixture_ready else "missing",
             "datahub_gms": datahub.gms,
             "datahub_mcp": datahub.mcp,
+            "datahub_catalog": datahub.catalog,
             "datahub_capabilities": datahub.capabilities,
         },
         "blockers": blockers,

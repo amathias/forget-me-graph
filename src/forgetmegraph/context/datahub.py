@@ -74,6 +74,7 @@ class DataHubCapabilityStatus(BaseModel):
     ready: bool
     gms: str
     mcp: str
+    catalog: str
     capabilities: list[str]
     blocker: str | None = None
 
@@ -287,6 +288,7 @@ async def probe_datahub(settings: Settings) -> DataHubCapabilityStatus:
             ready=False,
             gms="unconfigured",
             mcp="unconfigured",
+            catalog="unverified",
             capabilities=[],
             blocker="DataHub connection is not fully configured",
         )
@@ -298,9 +300,30 @@ async def probe_datahub(settings: Settings) -> DataHubCapabilityStatus:
             ready=False,
             gms="unreachable",
             mcp="unverified",
+            catalog="unverified",
             capabilities=[],
             blocker="DataHub GMS connectivity probe failed",
         )
+
+    try:
+        from forgetmegraph.demo.datahub_catalog import (
+            CUSTOMERS,
+            EXPECTED_ARTIFACTS,
+            TICKETS,
+            verify_catalog_readiness,
+        )
+
+        await asyncio.to_thread(verify_catalog_readiness, graph, settings=settings)
+    except Exception:
+        return DataHubCapabilityStatus(
+            ready=False,
+            gms="connected",
+            mcp="unverified",
+            catalog="missing_or_invalid",
+            capabilities=[],
+            blocker="DataHub catalog allocation is not seeded or valid",
+        )
+
     try:
         reader = DataHubMcpReader(
             namespace_prefix=settings.datahub_urn_prefix,
@@ -310,20 +333,22 @@ async def probe_datahub(settings: Settings) -> DataHubCapabilityStatus:
             ),
         )
         receipt = await reader.read_context(
-            entrypoint_urns=[settings.datahub_probe_urn],
-            expected_urns=[settings.datahub_probe_urn],
+            entrypoint_urns=[CUSTOMERS, TICKETS],
+            expected_urns=EXPECTED_ARTIFACTS,
         )
     except Exception:
         return DataHubCapabilityStatus(
             ready=False,
             gms="connected",
             mcp="unreachable_or_incapable",
+            catalog="ready",
             capabilities=[],
-            blocker="DataHub MCP connectivity or capability probe failed",
+            blocker="DataHub MCP connectivity, capability, or exact lineage probe failed",
         )
     return DataHubCapabilityStatus(
         ready=True,
         gms="connected",
         mcp="connected",
+        catalog="ready",
         capabilities=sorted(set(receipt.tools) & REQUIRED_MCP_TOOLS),
     )

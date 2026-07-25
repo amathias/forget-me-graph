@@ -23,6 +23,32 @@ def test_readiness_fails_closed_without_fixture_or_datahub(monkeypatch, tmp_path
     assert response.json()["checks"]["fixture"] == "missing"
 
 
+def test_readiness_returns_503_for_verified_soft_reset_state(monkeypatch, tmp_path) -> None:
+    fixture = tmp_path / "forget-me-graph"
+    fixture.mkdir()
+    (fixture / ".forgetmegraph-demo").write_text("synthetic disposable demo artifacts\n")
+    monkeypatch.setenv("DEMO_FIXTURE_ROOT", str(fixture))
+
+    async def reset_catalog_probe(settings):
+        return DataHubCapabilityStatus(
+            ready=False,
+            gms="connected",
+            mcp="unverified",
+            catalog="missing_or_invalid",
+            capabilities=[],
+            blocker="DataHub catalog allocation is not seeded or valid",
+        )
+
+    monkeypatch.setattr("forgetmegraph.api.probe_datahub", reset_catalog_probe)
+
+    response = TestClient(app).get("/api/readiness")
+
+    assert response.status_code == 503
+    assert response.json()["ready"] is False
+    assert response.json()["checks"]["datahub_catalog"] == "missing_or_invalid"
+    assert response.json()["blockers"] == ["DataHub catalog allocation is not seeded or valid"]
+
+
 def test_readiness_performs_live_capability_probe(monkeypatch, tmp_path) -> None:
     fixture = tmp_path / "forget-me-graph"
     fixture.mkdir()
@@ -34,6 +60,7 @@ def test_readiness_performs_live_capability_probe(monkeypatch, tmp_path) -> None
             ready=True,
             gms="connected",
             mcp="connected",
+            catalog="ready",
             capabilities=["get_entities", "get_lineage"],
         )
 
@@ -45,6 +72,7 @@ def test_readiness_performs_live_capability_probe(monkeypatch, tmp_path) -> None
     assert response.json()["ready"] is True
     assert response.json()["checks"]["datahub_gms"] == "connected"
     assert response.json()["checks"]["datahub_mcp"] == "connected"
+    assert response.json()["checks"]["datahub_catalog"] == "ready"
     assert response.json()["checks"]["datahub_capabilities"] == [
         "get_entities",
         "get_lineage",

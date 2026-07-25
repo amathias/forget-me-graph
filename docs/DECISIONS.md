@@ -77,3 +77,18 @@ transformed lineage, clears soft-delete status, then immediately rereads every a
 only those ten datasets to soft-deleted status; restore clears that status and rereads the complete
 fixture. Hard deletion is deliberately unsupported. Each operation writes a sanitized receipt with
 the fixture hash, exact URNs, observed status, verified aspects, and a receipt hash.
+
+## ADR-009: Readiness requires the complete active catalog allocation
+
+**Status:** Accepted
+
+Connectivity and MCP capability discovery alone cannot establish readiness: DataHub may return an
+empty successful response for an absent or soft-deleted probe entity. Readiness therefore performs
+non-mutating GMS rereads of the allocated domain/tag and all ten datasets, requiring active status,
+exact fixture names and marker properties, required domain/tag assignments, and exact nine-edge
+upstream lineage. Only then does it require MCP entity coverage for all ten URNs and complete
+downstream coverage from both entrypoints.
+
+No seed receipt is trusted as current state, and readiness never writes. Before seed, after soft
+reset, or after metadata/lineage drift it returns 503 with `datahub_catalog=missing_or_invalid`.
+Successful seed or restore must make the same live checks pass before readiness returns 200.

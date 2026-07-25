@@ -23,13 +23,14 @@ not deploy, access EC2, request a token value, or modify another workspace.
 | Field | Current value |
 |---|---|
 | Status | Code and local verification complete; coordinator live promotion/evidence required |
-| Milestone | Exact DataHub catalog seed, guarded soft reset/restore, live lineage gate, and verified evidence writeback |
-| Prior deployed commit | `477604258142f460bc1946b56f9c685d3cd9e61b` |
-| Prior live result | Health 200 and readiness 200; workflow failed closed in `read_context` because lineage was incomplete; no deletion or DataHub write receipt occurred |
+| Milestone | Exact catalog lifecycle plus fail-closed current-state readiness, live lineage gate, and verified evidence writeback |
+| Prior deployed commits | `477604258142f460bc1946b56f9c685d3cd9e61b` and `478b54128649d68c17454d7562290b30e6c2950e` |
+| Prior live results | `4776042` failed closed on incomplete lineage. On `478b541`, readiness incorrectly returned 200 both before seed with zero allocation rows and after a verified ten-dataset soft reset; no successful live deletion/write receipt has been reported |
+| Verified reset evidence | Coordinator reported all ten datasets immediately reread soft-deleted with `verified=true`; receipt SHA-256 prefix `103d2599` |
 | New clean commit | Reported by `git rev-parse HEAD` after this handoff is committed |
 | Build command | `python -m pip install -e ".[dev,datahub]"` |
 | Test command | `python -m ruff check src tests; python -m pytest --cov=forgetmegraph --cov-report=term-missing -q` |
-| Test evidence | 27 passing tests, 88% total coverage, Ruff clean |
+| Test evidence | 29 passing tests, 89% total coverage, Ruff clean |
 | Local demo result | `verified_with_limitations` because the subject-unaddressable aggregate is explicitly exempt |
 | Live evidence | Not claimed by this workspace; coordinator must capture the sequence below after promotion |
 
@@ -49,7 +50,6 @@ mechanism. Do not echo it, pass it on the command line, or save it in a project 
 $env:DATAHUB_GMS_URL = 'http://127.0.0.1:8080'
 $env:DATAHUB_MCP_URL = 'http://127.0.0.1:8000/mcp'
 $env:DATAHUB_URN_PREFIX = 'forgetme.'
-$env:DATAHUB_PROBE_URN = 'urn:li:dataset:(urn:li:dataPlatform:duckdb,forgetme.raw.customers,PROD)'
 python -m pip install -e ".[dev,datahub]"
 python -m ruff check src tests
 python -m pytest --cov=forgetmegraph --cov-report=term-missing -q
@@ -71,6 +71,15 @@ python -m forgetmegraph.api
 Invoke-RestMethod http://127.0.0.1:8103/api/health
 Invoke-RestMethod http://127.0.0.1:8103/api/readiness
 ```
+
+Expected readiness transitions must be captured during the guarded live sequence:
+
+| Catalog state | Expected `/api/readiness` |
+|---|---|
+| Before `seed-datahub` | HTTP 503; `datahub_catalog=missing_or_invalid` |
+| Immediately after verified seed | HTTP 200; `datahub_catalog=ready` |
+| Immediately after verified soft reset | HTTP 503; `datahub_catalog=missing_or_invalid` |
+| Immediately after verified restore | HTTP 200; `datahub_catalog=ready` |
 
 ## Exact catalog fixture and namespace guard
 
@@ -177,10 +186,22 @@ of the DataHub reads. The request identifier is hashed before writeback.
 
 ## Readiness behavior
 
-`GET /api/readiness` is non-mutating and returns 503 unless the fixture marker exists,
-`DataHubGraph.test_connection()` succeeds, MCP exposes both required tools, and MCP can read the
-configured namespaced probe entity and call downstream lineage. It distinguishes unconfigured,
-GMS-unreachable, and MCP-unreachable/incapable states without exposing exception text or secrets.
+`GET /api/readiness` is non-mutating and returns 503 unless the local fixture marker exists and all
+of these current-state checks pass:
+
+1. `DataHubGraph.test_connection()` succeeds.
+2. GMS rereads the exact allocated domain and tag, including the project marker.
+3. GMS rereads all ten allowlisted datasets as active (`Status.removed=false`).
+4. Every dataset has its exact fixture name and required marker properties, allocated domain, and
+   required project tag.
+5. Every dataset's `UpstreamLineage` exactly matches the nine-edge fixture.
+6. MCP exposes `get_entities` and `get_lineage`, returns all ten exact URNs, and returns complete
+   downstream coverage from both raw entrypoints.
+
+The endpoint reports `datahub_catalog=missing_or_invalid` before seed, after soft reset, or on any
+metadata/lineage drift. It does not trust a prior receipt and performs no writes. It distinguishes
+unconfigured, GMS-unreachable, catalog-invalid, and MCP-unreachable/incapable states without
+exposing exception text or secrets.
 
 ## Isolation proof
 
@@ -191,6 +212,9 @@ Automated tests prove:
 - extra, partial, and empty soft-reset target sets are rejected before status mutation;
 - seed, soft reset, and restore immediately reread the expected aspects and produce sanitized
   receipts;
+- readiness is 503 before seed and after a verified ten-dataset reset, and returns to 200 only after
+  exact seed/restore state plus full MCP coverage;
+- readiness rejects dataset-name/marker or exact-lineage drift and emits no metadata/status writes;
 - cross-namespace MCP assets and non-allowlisted evidence-write targets are rejected;
 - incomplete live entity context or lineage blocks execution before destructive adapters;
 - an unmarked nonempty local reset directory is refused and its sentinel survives;
@@ -210,9 +234,11 @@ Automated tests prove:
   and restore receipts. Then confirm readiness remains 200 after restore.
 - Coordinator owns deployment and rollback. This project must not deploy or access EC2.
 
-The prior deployed commit `477604258142f460bc1946b56f9c685d3cd9e61b` proved truthful
-readiness but failed closed because the catalog lacked complete supported lineage. It produced no
-live deletion and no DataHub write receipt. This candidate fixes that catalog prerequisite; local
-live validation remains unavailable because the Session Manager plugin and a plaintext token are
-intentionally absent from this workspace. No live success is claimed until the coordinator promotes
-the exact commit and captures the receipts above.
+The coordinator's live evidence on `478b54128649d68c17454d7562290b30e6c2950e` proved that the old
+one-URN capability probe was insufficient: it returned 200 against an absent allocation and again
+after a verified reset had reread all ten datasets soft-deleted. This candidate replaces that probe
+with exact current-state GMS and MCP checks, and regression-tests both states as 503. Local live
+validation remains unavailable because the Session Manager plugin and a plaintext token are
+intentionally absent from this workspace. No successful live workflow/writeback is claimed until
+the coordinator promotes the exact commit and captures seed, readiness transitions, workflow
+read/write, reset, and restore evidence.

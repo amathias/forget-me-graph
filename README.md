@@ -99,8 +99,11 @@ does not represent dataset-to-ML-entity edges. Their executable `feature_table` 
 semantics remain explicit fixture metadata and continue to select the same real adapters.
 
 The coordinator-aligned API listens on port `8103` and exposes `GET /api/health` and
-`GET /api/readiness`. Readiness performs real non-mutating GMS connection and MCP
-capability/entity/lineage probes; it does not infer readiness from configuration alone.
+`GET /api/readiness`. Readiness is non-mutating and returns 200 only when GMS rereads prove the
+allocated domain/tag, all ten active datasets, exact fixture metadata, required assignments, and
+nine-edge lineage, and MCP returns all ten entities plus complete downstream coverage from both
+entrypoints. It returns 503 before catalog seed, after `reset-datahub`, or on metadata/lineage drift;
+`restore-datahub` must pass the same current-state checks before readiness returns 200 again.
 
 ## First command for the builder
 

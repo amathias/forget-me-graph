@@ -128,6 +128,32 @@ class CatalogLifecycleReceipt(BaseModel):
     receipt_sha256: str
 
 
+def catalog_contract_fixture() -> CatalogFixture:
+    artifacts = tuple(
+        Artifact(
+            urn=urn,
+            name=metadata[0],
+            artifact_type=metadata[1],
+            adapter=metadata[2],
+            policy=metadata[3],
+        )
+        for urn, metadata in sorted(EXPECTED_ARTIFACTS.items())
+    )
+    edges = tuple(
+        LineageEdge(source_urn=source, destination_urn=destination)
+        for source, destination in sorted(EXPECTED_EDGES)
+    )
+    payload = {
+        "artifacts": [artifact.model_dump(mode="json") for artifact in artifacts],
+        "edges": [edge.model_dump(mode="json") for edge in edges],
+    }
+    return CatalogFixture(
+        artifacts=artifacts,
+        edges=edges,
+        fixture_sha256=_canonical_sha256(payload),
+    )
+
+
 def _canonical_sha256(value: object) -> str:
     return sha256(
         json.dumps(value, sort_keys=True, separators=(",", ":"), default=str).encode("utf-8")
@@ -337,8 +363,10 @@ def _verify_catalog(
     if require_metadata:
         domain = graph.get_aspect(DOMAIN_URN, DomainPropertiesClass)
         tag = graph.get_aspect(TAG_URN, TagPropertiesClass)
+        domain_properties = _get_custom_properties(domain)
         if (
             getattr(domain, "name", None) != DOMAIN_NAME
+            or domain_properties.get("project_slug") != PROJECT_SLUG
             or getattr(tag, "name", None) != PROJECT_TAG
         ):
             raise DataHubIntegrationError("DataHub catalog domain or tag reread did not match")
@@ -358,7 +386,14 @@ def _verify_catalog(
         properties = graph.get_aspect(artifact.urn, DatasetPropertiesClass)
         fixture_properties = _fixture_properties(artifact)
         observed_properties = _get_custom_properties(properties)
-        if any(observed_properties.get(key) != value for key, value in fixture_properties.items()):
+        observed_name = (
+            properties.get("name")
+            if isinstance(properties, dict)
+            else getattr(properties, "name", None)
+        )
+        if observed_name != artifact.name or any(
+            observed_properties.get(key) != value for key, value in fixture_properties.items()
+        ):
             raise DataHubIntegrationError("DataHub catalog properties reread did not match")
 
         domains = graph.get_aspect(artifact.urn, DomainsClass)
@@ -378,6 +413,22 @@ def _verify_catalog(
             raise DataHubIntegrationError("DataHub catalog lineage reread did not match")
 
     return dict(sorted(observed_removed.items())), sorted(set(verified_aspects))
+
+
+def verify_catalog_readiness(
+    graph: CatalogGraph,
+    *,
+    settings: Settings,
+) -> tuple[dict[str, bool], list[str]]:
+    require_catalog_settings(settings)
+    fixture = catalog_contract_fixture()
+    require_exact_targets(fixture.urns, fixture)
+    return _verify_catalog(
+        graph,
+        fixture,
+        expected_removed=False,
+        require_metadata=True,
+    )
 
 
 def _receipt(

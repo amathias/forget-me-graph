@@ -21,7 +21,7 @@ def test_selector_is_tokenized_encrypted_and_recoverable() -> None:
 
     assert protected.token.startswith("subj_")
     assert protected.token != "42"
-    assert "42" not in protected.ciphertext
+    assert selector.model_dump_json() not in protected.ciphertext
     assert safe_selector_summary(protected)["token"] == protected.token
     assert protector.reveal(protected) == selector
     assert_no_raw_value(safe_selector_summary(protected), selector.value)
