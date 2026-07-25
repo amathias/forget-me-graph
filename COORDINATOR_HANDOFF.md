@@ -22,16 +22,17 @@ not deploy, access EC2, request a token value, or modify another workspace.
 
 | Field | Current value |
 |---|---|
-| Status | Judge-facing UI and public submission package complete locally; promotion and recording pending |
-| Milestone | Phases 0-6 implementation/package complete; only coordinator-owned availability, recording, and Devpost operations remain |
+| Status | Release-hardening successor verified locally; coordinator promotion and recording pending |
+| Milestone | Selector-readiness contract and exact integration pins complete; coordinator-owned promotion, availability, recording, and Devpost operations remain |
 | Current deployed candidate | `8a24421f99622140bfa3e75c8db7ec3923f100de` |
 | Prior deployed commits | `477604258142f460bc1946b56f9c685d3cd9e61b` and `478b54128649d68c17454d7562290b30e6c2950e` |
 | Prior live findings | `4776042` failed closed on incomplete lineage; `478b541` exposed the absent/reset readiness false positive fixed by `8a24421` |
 | Judge UI code commit | `b9a33f3ac339cfdf26a448ec7c50d143da6721dd`; deployed backend remains `8a24421` until coordinator promotion |
-| Final public candidate | This documentation-only successor commit as reported by `git rev-parse HEAD` |
+| Prior public candidate | `85828900cc0433bff9f3e0dc5032dcd3a0116c5c` (independently release-reviewed by the coordinator) |
+| Release-hardening candidate | This commit as reported by `git rev-parse HEAD`; no new live evidence is claimed |
 | Build command | `python -m pip install -e ".[dev,datahub]"` |
 | Test command | `python -m ruff check src tests; python -m pytest --cov=forgetmegraph --cov-report=term-missing -q` |
-| Test evidence | 39 passing tests, 89% total coverage, Ruff clean, JavaScript syntax clean, wheel contains all UI assets |
+| Test evidence | 45 passing tests, 89% total coverage, Ruff clean, JavaScript syntax clean; clean wheel and source-archive installs contain all UI assets and exact DataHub clients |
 | Local demo result | `verified_with_limitations` because the subject-unaddressable aggregate is explicitly exempt |
 | Live evidence | Coordinator-owned deployed evidence passed; exact hashes are recorded below |
 
@@ -99,22 +100,39 @@ Safety properties added for the UI path:
 - a stale plan hash is rejected before fixture reset or mutation;
 - local/test mode can demonstrate real disposable adapters without DataHub, but non-local mode
   forces the live DataHub gate even when the client asks to disable it;
-- non-local planning/readiness fail closed unless `FMG_SELECTOR_SECRET` is supplied out of band;
+- non-local planning/readiness fail closed unless `FMG_SELECTOR_SECRET` is supplied out of band
+  and satisfies the actual selector-protection contract;
 - execution is process-serialized for the demo, and evidence downloads accept only four exact
   filenames plus validated opaque request IDs.
 
 ### Promotion requirement introduced by this milestone
 
-Supply `FMG_SELECTOR_SECRET` through the coordinator's secret mechanism to every non-local app
-container. Do not echo it or place it in Git, container arguments, screenshots, or handoffs. With
-`APP_ENV` outside `local`/`test`, `/api/readiness` now reports
-`selector_protection=missing` and returns 503 until that variable is present. No other dependency,
-port, catalog namespace, DataHub operation, or deployment topology changed.
+Supply a minimum-16-character `FMG_SELECTOR_SECRET` through the coordinator's secret mechanism to
+every non-local app container. Do not echo it or place it in Git, container arguments, screenshots,
+or handoffs. With `APP_ENV` outside `local`/`test`, `/api/readiness` reports
+`selector_protection=missing_or_invalid` and returns 503 until the value satisfies the same
+contract enforced by planning. Readiness does not derive, hash, persist, log, or return the value.
+An absent local/test value uses the bundled disposable fallback; an explicitly invalid value never
+does. No port, catalog namespace, DataHub operation, or deployment topology changed.
 
-The package build verified that `index.html`, `app.css`, and `app.js` are present in the wheel. The
-UI regression suite proves redacted planning/validation, approval refusal, stale-plan refusal before
-reset, local end-to-end execution and downloads, unallowlisted download refusal, no browser storage
-or logging calls, exact coordinator-hash presentation, and the non-local DataHub/secret gates.
+Clean wheel and source-archive installations verified that `index.html`, `app.css`, and `app.js`
+are installed and that the `datahub` extra resolves exactly `acryl-datahub==1.6.0.15` and
+`mcp==1.28.1`. The UI regression suite proves redacted planning/validation, approval refusal,
+stale-plan refusal before reset, local end-to-end execution and downloads, unallowlisted download
+refusal, no browser storage or logging calls, exact coordinator-hash presentation, and the
+non-local DataHub/secret gates.
+
+### Release-hardening successor
+
+Readiness now calls the same side-effect-free selector-secret validator used before key derivation.
+The controlled-probe regressions cover an absent non-local secret, a 15-character invalid value, a
+minimum-valid 16-character value, and the absent local/test fallback. They also prove that response
+content does not expose the provided value. The `datahub` optional dependency pins the two exact
+coordinator-verified client versions so an archive deployment cannot silently select a different
+integration stack.
+
+This successor was verified only in the local project workspace. It preserves all coordinator-owned
+live results above and does not claim a new deployment, live workflow, receipt, or readiness result.
 
 ## Public submission package
 
@@ -295,19 +313,22 @@ of the DataHub reads. The request identifier is hashed before writeback.
 `GET /api/readiness` is non-mutating and returns 503 unless the local fixture marker exists and all
 of these current-state checks pass:
 
-1. `DataHubGraph.test_connection()` succeeds.
-2. GMS rereads the exact allocated domain and tag, including the project marker.
-3. GMS rereads all ten allowlisted datasets as active (`Status.removed=false`).
-4. Every dataset has its exact fixture name and required marker properties, allocated domain, and
+1. Selector protection is present and valid, or the process is explicitly local/test with the
+   bundled disposable fallback.
+2. `DataHubGraph.test_connection()` succeeds.
+3. GMS rereads the exact allocated domain and tag, including the project marker.
+4. GMS rereads all ten allowlisted datasets as active (`Status.removed=false`).
+5. Every dataset has its exact fixture name and required marker properties, allocated domain, and
    required project tag.
-5. Every dataset's `UpstreamLineage` exactly matches the nine-edge fixture.
-6. MCP exposes `get_entities` and `get_lineage`, returns all ten exact URNs, and returns complete
+6. Every dataset's `UpstreamLineage` exactly matches the nine-edge fixture.
+7. MCP exposes `get_entities` and `get_lineage`, returns all ten exact URNs, and returns complete
    downstream coverage from both raw entrypoints.
 
 The endpoint reports `datahub_catalog=missing_or_invalid` before seed, after soft reset, or on any
-metadata/lineage drift. It does not trust a prior receipt and performs no writes. It distinguishes
-unconfigured, GMS-unreachable, catalog-invalid, and MCP-unreachable/incapable states without
-exposing exception text or secrets.
+metadata/lineage drift and `selector_protection=missing_or_invalid` for an absent or invalid
+non-local selector secret. It does not trust a prior receipt and performs no writes. It
+distinguishes selector-invalid, unconfigured, GMS-unreachable, catalog-invalid, and
+MCP-unreachable/incapable states without exposing exception text or secrets.
 
 ## Isolation proof
 
@@ -321,6 +342,8 @@ Automated tests prove:
 - readiness is 503 before seed and after a verified ten-dataset reset, and returns to 200 only after
   exact seed/restore state plus full MCP coverage;
 - readiness rejects dataset-name/marker or exact-lineage drift and emits no metadata/status writes;
+- readiness rejects absent and short non-local selector secrets, accepts the minimum-valid length,
+  and preserves the absent local/test fallback with its DataHub probe independently controlled;
 - cross-namespace MCP assets and non-allowlisted evidence-write targets are rejected;
 - incomplete live entity context or lineage blocks execution before destructive adapters;
 - an unmarked nonempty local reset directory is refused and its sentinel survives;
@@ -333,14 +356,15 @@ Automated tests prove:
 - The coordinator-verified backend deployment remains exact commit
   `8a24421f99622140bfa3e75c8db7ec3923f100de`; every live backend, readiness-transition, Lifeboat
   isolation, concurrency, and snapshot result recorded above remains valid and unchanged.
-- Judge-facing product code is exact commit
-  `b9a33f3ac339cfdf26a448ec7c50d143da6721dd`. The final clean candidate is its documentation-only
-  successor at project HEAD, reported by `git rev-parse HEAD` after commit.
+- The prior public candidate is exact commit
+  `85828900cc0433bff9f3e0dc5032dcd3a0116c5c`. The release-hardening candidate is project HEAD,
+  reported by `git rev-parse HEAD` after commit; no new live evidence is claimed for it.
 - This project did not access AWS, deploy, request a token, copy private receipts, or modify another
   workspace.
-- Before promotion, supply `FMG_SELECTOR_SECRET` out of band to every non-local app container. Then
-  promote the final HEAD, verify `/api/health`, `/api/readiness`, protected planning, exact-plan
-  approval, guarded live execution, evidence downloads, and DataHub write/immediate reread.
+- Before promotion, supply a minimum-16-character `FMG_SELECTOR_SECRET` out of band to every
+  non-local app container. Install the pinned `datahub` extra, then promote the final HEAD and
+  verify `/api/health`, `/api/readiness`, protected planning, exact-plan approval, guarded live
+  execution, evidence downloads, and DataHub write/immediate reread.
 - Record the public demo with `docs/DEMO_RECORDING.md`, perform its redaction review, publish the
   under-three-minute video, replace the two explicit URL placeholders in `SUBMISSION.md`, verify app
   and video availability while signed out, and recheck the official Devpost rules/deadline.

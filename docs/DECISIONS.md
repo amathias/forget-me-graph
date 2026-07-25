@@ -117,3 +117,17 @@ observations in `examples/live-evidence-summary.json`. It does not copy runtime 
 responses, selector-derived values, credentials, or private infrastructure evidence into Git.
 Plan/request/certificate examples are clearly labeled redacted and non-runtime so they cannot be
 mistaken for executed proof. Operational evidence remains under configured runtime state roots.
+
+## ADR-012: Release readiness validates the executable secret contract
+
+**Status:** Accepted
+
+Non-local readiness validates `FMG_SELECTOR_SECRET` with the same minimum-length contract used by
+`SelectorProtector`, but it does not derive a key, hash, log, persist, or return the value. Missing
+or invalid configuration reports only `selector_protection=missing_or_invalid` and HTTP 503. An
+absent secret in local/test mode uses the existing valid synthetic demo fallback; an explicitly
+provided invalid value never falls back.
+
+The live integration extra pins `acryl-datahub==1.6.0.15` and `mcp==1.28.1`, the exact
+coordinator-verified client versions, so wheel and source-archive installation cannot silently
+resolve a different DataHub/MCP client stack.

@@ -1,3 +1,4 @@
+import pytest
 from fastapi.testclient import TestClient
 
 from forgetmegraph.api import app
@@ -79,13 +80,11 @@ def test_readiness_performs_live_capability_probe(monkeypatch, tmp_path) -> None
     ]
 
 
-def test_readiness_fails_closed_without_nonlocal_selector_secret(monkeypatch, tmp_path) -> None:
+def _configure_other_readiness_gates(monkeypatch, tmp_path) -> None:
     fixture = tmp_path / "forget-me-graph"
     fixture.mkdir()
     (fixture / ".forgetmegraph-demo").write_text("synthetic disposable demo artifacts\n")
-    monkeypatch.setenv("APP_ENV", "production")
     monkeypatch.setenv("DEMO_FIXTURE_ROOT", str(fixture))
-    monkeypatch.delenv("FMG_SELECTOR_SECRET", raising=False)
 
     async def successful_probe(settings):
         return DataHubCapabilityStatus(
@@ -98,8 +97,85 @@ def test_readiness_fails_closed_without_nonlocal_selector_secret(monkeypatch, tm
 
     monkeypatch.setattr("forgetmegraph.api.probe_datahub", successful_probe)
 
+
+def test_readiness_fails_closed_without_nonlocal_selector_secret(monkeypatch, tmp_path) -> None:
+    _configure_other_readiness_gates(monkeypatch, tmp_path)
+    monkeypatch.setenv("APP_ENV", "production")
+    monkeypatch.delenv("FMG_SELECTOR_SECRET", raising=False)
+
     response = TestClient(app).get("/api/readiness")
 
     assert response.status_code == 503
-    assert response.json()["checks"]["selector_protection"] == "missing"
-    assert response.json()["blockers"] == ["selector protection is not configured"]
+    assert response.json()["ready"] is False
+    assert response.json()["checks"]["selector_protection"] == "missing_or_invalid"
+    assert response.json()["blockers"] == ["selector protection is missing or invalid"]
+
+
+def test_readiness_fails_closed_for_short_selector_secret(monkeypatch, tmp_path) -> None:
+    _configure_other_readiness_gates(monkeypatch, tmp_path)
+    invalid_secret = "fifteen-chars!!"
+    assert len(invalid_secret) == 15
+    monkeypatch.setenv("APP_ENV", "production")
+    monkeypatch.setenv("FMG_SELECTOR_SECRET", invalid_secret)
+
+    response = TestClient(app).get("/api/readiness")
+
+    assert response.status_code == 503
+    assert response.json()["ready"] is False
+    assert response.json()["checks"]["selector_protection"] == "missing_or_invalid"
+    assert response.json()["blockers"] == ["selector protection is missing or invalid"]
+    assert invalid_secret not in response.text
+
+
+def test_readiness_accepts_minimum_valid_selector_secret(monkeypatch, tmp_path) -> None:
+    _configure_other_readiness_gates(monkeypatch, tmp_path)
+    minimum_valid_secret = "sixteen-chars!!!"
+    assert len(minimum_valid_secret) == 16
+    monkeypatch.setenv("APP_ENV", "production")
+    monkeypatch.setenv("FMG_SELECTOR_SECRET", minimum_valid_secret)
+
+    response = TestClient(app).get("/api/readiness")
+
+    assert response.status_code == 200
+    assert response.json()["ready"] is True
+    assert response.json()["checks"]["selector_protection"] == "ready"
+    assert response.json()["blockers"] == []
+    assert minimum_valid_secret not in response.text
+
+
+@pytest.mark.parametrize("app_env", ["local", "test"])
+def test_readiness_accepts_local_test_demo_secret_fallback(
+    monkeypatch,
+    tmp_path,
+    app_env,
+) -> None:
+    _configure_other_readiness_gates(monkeypatch, tmp_path)
+    monkeypatch.setenv("APP_ENV", app_env)
+    monkeypatch.delenv("FMG_SELECTOR_SECRET", raising=False)
+
+    response = TestClient(app).get("/api/readiness")
+
+    assert response.status_code == 200
+    assert response.json()["ready"] is True
+    assert response.json()["checks"]["selector_protection"] == "ready"
+    assert response.json()["blockers"] == []
+
+
+@pytest.mark.parametrize("app_env", ["local", "test"])
+def test_readiness_does_not_mask_explicit_invalid_local_test_secret(
+    monkeypatch,
+    tmp_path,
+    app_env,
+) -> None:
+    _configure_other_readiness_gates(monkeypatch, tmp_path)
+    invalid_secret = "too-short"
+    monkeypatch.setenv("APP_ENV", app_env)
+    monkeypatch.setenv("FMG_SELECTOR_SECRET", invalid_secret)
+
+    response = TestClient(app).get("/api/readiness")
+
+    assert response.status_code == 503
+    assert response.json()["ready"] is False
+    assert response.json()["checks"]["selector_protection"] == "missing_or_invalid"
+    assert response.json()["blockers"] == ["selector protection is missing or invalid"]
+    assert invalid_secret not in response.text

@@ -41,9 +41,13 @@ Application code does not log request bodies or selector values. Standard access
 method and URL path, not the JSON body. A deployed environment must use HTTPS and must not add
 reverse-proxy body logging, browser analytics, request tracing, or error capture that records bodies.
 
-The bundled default selector secret exists only for disposable local demonstrations. Any deployed
-environment must provide `FMG_SELECTOR_SECRET` through its secret mechanism. DataHub credentials are
-also supplied out of band and never included in requests, examples, screenshots, or Git.
+The bundled default selector secret exists only for disposable local/test demonstrations. Any
+other environment must provide `FMG_SELECTOR_SECRET` through its secret mechanism, and the value
+must contain at least 16 characters. Readiness validates that same minimum contract without
+deriving, hashing, persisting, logging, or returning the value; missing or invalid protection fails
+closed. An explicitly invalid local/test value also fails rather than silently falling back.
+DataHub credentials are supplied out of band and never included in requests, examples, screenshots,
+or Git.
 
 ## Accurate boundary of the claim
 

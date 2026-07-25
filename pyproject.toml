@@ -22,8 +22,8 @@ dependencies = [
 
 [project.optional-dependencies]
 datahub = [
-  "acryl-datahub>=1.1,<2",
-  "mcp>=1.9,<2",
+  "acryl-datahub==1.6.0.15",
+  "mcp==1.28.1",
 ]
 dev = [
   "httpx>=0.28,<1",

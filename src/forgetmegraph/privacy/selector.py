@@ -14,12 +14,18 @@ class SelectorProtectionError(ValueError):
     pass
 
 
+def validate_selector_secret(secret: str) -> None:
+    """Validate the selector secret without deriving, hashing, logging, or retaining it."""
+    if len(secret) < 16:
+        raise SelectorProtectionError("selector secret must contain at least 16 characters")
+
+
 class SelectorProtector:
     """Pseudonymizes selectors for display and encrypts values for resumable execution."""
 
     def __init__(self, secret: str) -> None:
-        if len(secret) < 16:
-            raise SelectorProtectionError("selector secret must contain at least 16 characters")
+        validate_selector_secret(secret)
+
         self._secret = secret.encode("utf-8")
         fernet_key = base64.urlsafe_b64encode(sha256(self._secret + b":encryption").digest())
         self._fernet = Fernet(fernet_key)
