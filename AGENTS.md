@@ -34,6 +34,19 @@ Before modifying code, read these files completely:
 - Test selector propagation, key mappings, incomplete lineage, deletion failures, retraining, and certificate accuracy.
 - Maintain `docs/DECISIONS.md` as architectural decisions are made.
 
+## GitHub publishing
+
+- Canonical repository: `https://github.com/amathias/forget-me-graph`.
+- Configured origin: `git@github-datahub-forget-me-graph:amathias/forget-me-graph.git`.
+- While this chat is the project's primary writer, it may commit and intermittently push verified
+  milestone changes to `origin/main`.
+- Inspect the complete diff, run relevant checks, stage only intended paths, and keep
+  `COORDINATOR_HANDOFF.md` current before pushing.
+- Never change the remote, force push, delete remote refs, use another project's SSH alias, or add
+  secrets, private keys, `.env` files, runtime receipts, or private evidence to Git.
+- If `origin` is absent or differs from the exact value above, stop and escalate to the portfolio
+  coordinator.
+
 ## Definition of done
 
 A reviewer can submit the demo deletion request, inspect affected assets, approve the plan, watch real local tables and vector records be purged and a toy model retrained, rerun verification, see DataHub updates, and download a truthful evidence certificate.
