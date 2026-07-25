@@ -19,13 +19,13 @@ certificates use the pseudonymous token.
 
 ## ADR-003: Risk-first DataHub integration
 
-**Status:** Accepted with environment constraint
+**Status:** Accepted
 
-The target is open-source DataHub plus the self-hosted DataHub MCP server for reads
-and the supported Python SDK for writeback. The current development machine does not
-have Docker installed, so the core uses a fixture-backed context provider until the
-container runtime is available. The provider interface prevents fixture behavior from
-being mistaken for the final integration.
+Open-source DataHub and its self-hosted MCP server provide live entity and downstream-lineage
+context. Deterministic fixture metadata still defines executable adapters and explicit selector-key
+mappings, but live MCP must prove every planned target exists in the allocated namespace and is
+reachable from the two entrypoints before execution starts. This retains deterministic action
+selection while making DataHub context a mandatory fail-closed gate in live mode.
 
 ## ADR-004: Clean retraining is not formal unlearning
 
@@ -52,4 +52,12 @@ Adapter success messages do not determine certificate status. The verifier re-qu
 subject-addressable store and checks the active training/model manifest. Missing receipts,
 retained records, or blocked mappings produce an incomplete certificate. Aggregate exemptions
 produce `verified_with_limitations`, never an unqualified complete result.
+## ADR-007: Narrow, receipt-backed DataHub writeback
 
+**Status:** Accepted
+
+Forget-Me-Graph writes only evidence custom properties on the allowlisted source dataset through the
+supported DataHub Python SDK. It never mutates shared lineage or deletes DataHub entities. The
+request identifier is hashed, and the property values contain only action status and evidence
+hashes. A successful receipt requires an immediate reread of `datasetProperties` with exact value
+matching. Readiness performs only connection, capability, entity, and lineage reads.

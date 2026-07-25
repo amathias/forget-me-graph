@@ -19,6 +19,7 @@ class Settings:
     datahub_domain: str
     datahub_project_tag: str
     datahub_urn_prefix: str
+    datahub_probe_urn: str
     demo_fixture_root: Path
 
     @classmethod
@@ -36,5 +37,9 @@ class Settings:
             datahub_domain=os.getenv("DATAHUB_DOMAIN", "Demo / Forget-Me-Graph"),
             datahub_project_tag=os.getenv("DATAHUB_PROJECT_TAG", "project-forget-me-graph"),
             datahub_urn_prefix=os.getenv("DATAHUB_URN_PREFIX", "forgetme."),
+            datahub_probe_urn=os.getenv(
+                "DATAHUB_PROBE_URN",
+                "urn:li:dataset:(urn:li:dataPlatform:duckdb,forgetme.raw.customers,PROD)",
+            ),
             demo_fixture_root=Path(os.getenv("DEMO_FIXTURE_ROOT", "demo/fixtures/forget-me-graph")),
         )

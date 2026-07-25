@@ -62,20 +62,32 @@ synthetic artifacts:
 - full scikit-learn toy-model retraining and active-manifest switch;
 - independent before/after verification;
 - tamper-evident JSON and Markdown evidence certificates;
-- fail-closed namespace, fixture-marker, plan-hash, and readiness checks.
+- fail-closed namespace, fixture-marker, plan-hash, and readiness checks;
+- live DataHub MCP entity/lineage gating for every planned target;
+- one allowlisted DataHub SDK evidence write with immediate aspect reread and receipts.
 
-Run it locally:
+Run and test the complete slice locally:
 
 ```powershell
-python -m pip install -e ".[dev]"
-python -m pytest
+python -m pip install -e ".[dev,datahub]"
+python -m ruff check src tests
+python -m pytest --cov=forgetmegraph --cov-report=term-missing -q
 python -m forgetmegraph.demo.workflow --approved-by demo-privacy-operator --seed
 python -m forgetmegraph.api
 ```
 
-The coordinator-aligned API listens on port `8103` by default and exposes
-`GET /api/health` and `GET /api/readiness`. Readiness remains false until the shared
-open-source DataHub MCP and SDK integration is configured and verified.
+For the live path, start the coordinator-owned GMS and MCP SSM tunnels, supply
+`DATAHUB_TOKEN` out of band, then run:
+
+```powershell
+$env:DATAHUB_GMS_URL = 'http://127.0.0.1:8080'
+$env:DATAHUB_MCP_URL = 'http://127.0.0.1:8000/mcp'
+python -m forgetmegraph.demo.workflow --approved-by demo-privacy-operator --seed --require-datahub
+```
+
+The coordinator-aligned API listens on port `8103` and exposes `GET /api/health` and
+`GET /api/readiness`. Readiness performs real non-mutating GMS connection and MCP
+capability/entity/lineage probes; it does not infer readiness from configuration alone.
 
 ## First command for the builder
 
