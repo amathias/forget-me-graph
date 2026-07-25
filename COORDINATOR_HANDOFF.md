@@ -22,17 +22,59 @@ not deploy, access EC2, request a token value, or modify another workspace.
 
 | Field | Current value |
 |---|---|
-| Status | Code and local verification complete; coordinator live promotion/evidence required |
-| Milestone | Exact catalog lifecycle plus fail-closed current-state readiness, live lineage gate, and verified evidence writeback |
+| Status | Live backend vertical slice deployed and coordinator-verified |
+| Milestone | Phases 0-4 complete; remaining milestone is the Phase 5/6 judge-facing UI, demo, and submission hardening |
+| Current deployed candidate | `8a24421f99622140bfa3e75c8db7ec3923f100de` |
 | Prior deployed commits | `477604258142f460bc1946b56f9c685d3cd9e61b` and `478b54128649d68c17454d7562290b30e6c2950e` |
-| Prior live results | `4776042` failed closed on incomplete lineage. On `478b541`, readiness incorrectly returned 200 both before seed with zero allocation rows and after a verified ten-dataset soft reset; no successful live deletion/write receipt has been reported |
-| Verified reset evidence | Coordinator reported all ten datasets immediately reread soft-deleted with `verified=true`; receipt SHA-256 prefix `103d2599` |
-| New clean commit | Reported by `git rev-parse HEAD` after this handoff is committed |
+| Prior live findings | `4776042` failed closed on incomplete lineage; `478b541` exposed the absent/reset readiness false positive fixed by `8a24421` |
+| Documentation-only handoff commit | Reported by `git rev-parse HEAD` after this handoff is committed; product deployment remains `8a24421` |
 | Build command | `python -m pip install -e ".[dev,datahub]"` |
 | Test command | `python -m ruff check src tests; python -m pytest --cov=forgetmegraph --cov-report=term-missing -q` |
 | Test evidence | 29 passing tests, 89% total coverage, Ruff clean |
 | Local demo result | `verified_with_limitations` because the subject-unaddressable aggregate is explicitly exempt |
-| Live evidence | Not claimed by this workspace; coordinator must capture the sequence below after promotion |
+| Live evidence | Coordinator-owned deployed evidence passed; exact hashes are recorded below |
+
+## Coordinator-owned live validation
+
+These results were captured by the portfolio coordinator against deployed product commit
+`8a24421f99622140bfa3e75c8db7ec3923f100de`. They were not reproduced from this project workspace.
+
+### Primary guarded workflow
+
+- Exact catalog seed verified ten active datasets and nine lineage edges.
+- The approval-gated workflow completed with `status=verified_with_limitations`, matching the
+  documented subject-unaddressable aggregate exemption.
+
+| Evidence | SHA-256 |
+|---|---|
+| Certificate canonical hash | `0dfc8e519e3cb3d30e037aa46b1b030e06a67d061023ec19ff70a93e61d78e1` |
+| `certificate.json` file | `9f1c8c5897a3e04da42924beea7942785ed88736a3da0a153746b0d51ba16b55` |
+| `certificate.md` file | `fc20ca8b44c9e1fbbe5b66390034fd208b0d5331d91fbecb3a701e62387f49be` |
+| DataHub read receipt | `25dcba1cec326b4f6bf09f1ac4cab3c3a6b2fc4cf6fc838c7ff6e16c9051d7a4` |
+| DataHub write/reread receipt | `15dabe47bee2136c0f5915bf4a66c2fcd6e474c25aa4844cc72e8b2d39e8d5c5` |
+
+### Reset, restore, readiness, and isolation
+
+- Exact reset verified all ten project datasets soft-deleted; its canonical receipt SHA-256 has
+  prefix `103d2599`.
+- The same reset preserved all 102 Lifeboat aspect rows byte-for-byte.
+- Exact restore verified all ten datasets active plus all nine edges; its canonical receipt SHA-256
+  has prefix `60dbf681`.
+- Public readiness transitioned exactly `200 restored -> 503 reset -> 200 restored`.
+
+### Concurrency and immutable snapshot evidence
+
+- Request `coordinator-concurrency-live-002` succeeded concurrently with Lifeboat using separate,
+  private, pinned MCP workers.
+
+| Concurrency evidence | SHA-256 |
+|---|---|
+| DataHub read receipt | `5e210e715a49df004997da437110d1c0c9631b2f070cd0be4a740304ddeb239b` |
+| DataHub write/reread receipt | `6776e2e181cd49a94ae1026c544693696b7c5af536065d2b7d1f31e78c70fc73` |
+| Certificate | `f5633f7f8579d58cae5ea4a91204027ba6b13dcbcd3f529c4617db655b342268` |
+
+Post-evidence snapshot `snap-06d2125eaa1106558` was mounted read-only, and its certificate hash
+matched `f5633f7f8579d58cae5ea4a91204027ba6b13dcbcd3f529c4617db655b342268` exactly.
 
 ## Exact tunnel, configuration, and live sequence
 
@@ -72,7 +114,7 @@ Invoke-RestMethod http://127.0.0.1:8103/api/health
 Invoke-RestMethod http://127.0.0.1:8103/api/readiness
 ```
 
-Expected readiness transitions must be captured during the guarded live sequence:
+Expected readiness transitions for any rerun (already captured in the coordinator evidence above):
 
 | Catalog state | Expected `/api/readiness` |
 |---|---|
@@ -222,23 +264,25 @@ Automated tests prove:
 - immutable approval hashes, destructive adapter allowlists, idempotency, retraining, independent
   verification, and certificate accuracy remain green.
 
-## Deployment needs and current live-proof status
+## Current deployment and remaining milestone
 
-- Promote only the clean commit reported with this handoff; do not cherry-pick an uncommitted tree.
-- Install the documented `datahub` extra in the image.
-- Keep the existing service-account token in the coordinator's SecureString mechanism; no value is
-  needed in Git or this handoff.
-- Preserve port `8103`, the fixed fixture/state roots, domain, tag, and `forgetme.` namespace.
-- Run `seed-datahub` before the required live workflow and capture the seed receipt.
-- Capture the guarded MCP read, approval-gated local mutation, SDK write/immediate reread, soft reset,
-  and restore receipts. Then confirm readiness remains 200 after restore.
-- Coordinator owns deployment and rollback. This project must not deploy or access EC2.
+- The current deployed product candidate is
+  `8a24421f99622140bfa3e75c8db7ec3923f100de`.
+- The live seed, approved workflow, DataHub write/immediate reread, reset, restore, readiness
+  transitions, Lifeboat isolation, concurrent private-MCP run, and read-only snapshot verification
+  have passed with the coordinator-owned hashes above.
+- This documentation-only successor commit does not require a product deployment; it records the
+  evidence while leaving `8a24421` as the deployed application candidate.
+- The coordinator continues to own AWS, secrets, deployment, rollback, and evidence retention. No
+  credential value was requested or recorded here.
+- No further backend fix is requested by the coordinator.
 
-The coordinator's live evidence on `478b54128649d68c17454d7562290b30e6c2950e` proved that the old
-one-URN capability probe was insufficient: it returned 200 against an absent allocation and again
-after a verified reset had reread all ten datasets soft-deleted. This candidate replaces that probe
-with exact current-state GMS and MCP checks, and regression-tests both states as 503. Local live
-validation remains unavailable because the Session Manager plugin and a plaintext token are
-intentionally absent from this workspace. No successful live workflow/writeback is claimed until
-the coordinator promotes the exact commit and captures seed, readiness transitions, workflow
-read/write, reset, and restore evidence.
+Phases 0-4 of `BUILD_PLAN.md` now have deployed evidence. The remaining project milestone is the
+Phase 5/6 judge-facing and submission package:
+
+1. Present the request, live DataHub impact graph and selector mappings, honest action plan,
+   approval, execution, verification matrix, certificate, and writeback in a judge-facing UI.
+2. Package redacted examples, screenshots, and the coordinator-owned evidence hashes without
+   exposing selectors or secrets.
+3. Record the public demo under the 2:45 target and complete the repository/Devpost availability,
+   Apache 2.0 license, claims, privacy, and final rules audit.
