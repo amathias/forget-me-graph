@@ -151,11 +151,11 @@ Never cut privacy boundaries, explicit selector mappings, real deletion/retraini
 
 ## Final engineering checklist
 
-- [ ] Synthetic data only.
-- [ ] No raw subject data enters an LLM prompt.
-- [ ] Missing mappings fail closed.
-- [ ] Destructive work requires approval.
-- [ ] “Retrained” is not mislabeled “mathematically unlearned.”
-- [ ] Reset and rerun work reliably.
+- [x] Synthetic data only.
+- [x] No raw subject data enters an LLM prompt; the executable workflow uses no LLM.
+- [x] Missing mappings fail closed.
+- [x] Destructive work requires approval.
+- [x] “Retrained” is not mislabeled “mathematically unlearned.”
+- [x] Reset and rerun work reliably.
 - [ ] CI covers the privacy and evidence contracts.
-- [ ] README maps proof to judging criteria.
+- [x] README maps proof to judging criteria.

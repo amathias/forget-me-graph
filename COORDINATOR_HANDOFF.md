@@ -22,12 +22,13 @@ not deploy, access EC2, request a token value, or modify another workspace.
 
 | Field | Current value |
 |---|---|
-| Status | Live backend evidence preserved; judge-facing UI verified locally and awaiting promotion |
-| Milestone | Phases 0-5 complete; Phase 6 public submission packaging follows in the next documentation milestone |
+| Status | Judge-facing UI and public submission package complete locally; promotion and recording pending |
+| Milestone | Phases 0-6 implementation/package complete; only coordinator-owned availability, recording, and Devpost operations remain |
 | Current deployed candidate | `8a24421f99622140bfa3e75c8db7ec3923f100de` |
 | Prior deployed commits | `477604258142f460bc1946b56f9c685d3cd9e61b` and `478b54128649d68c17454d7562290b30e6c2950e` |
 | Prior live findings | `4776042` failed closed on incomplete lineage; `478b541` exposed the absent/reset readiness false positive fixed by `8a24421` |
-| Judge UI candidate | This commit as reported by `git rev-parse HEAD`; deployed backend remains `8a24421` until coordinator promotion |
+| Judge UI code commit | `b9a33f3ac339cfdf26a448ec7c50d143da6721dd`; deployed backend remains `8a24421` until coordinator promotion |
+| Final public candidate | This documentation-only successor commit as reported by `git rev-parse HEAD` |
 | Build command | `python -m pip install -e ".[dev,datahub]"` |
 | Test command | `python -m ruff check src tests; python -m pytest --cov=forgetmegraph --cov-report=term-missing -q` |
 | Test evidence | 39 passing tests, 89% total coverage, Ruff clean, JavaScript syntax clean, wheel contains all UI assets |
@@ -114,6 +115,30 @@ The package build verified that `index.html`, `app.css`, and `app.js` are presen
 UI regression suite proves redacted planning/validation, approval refusal, stale-plan refusal before
 reset, local end-to-end execution and downloads, unallowlisted download refusal, no browser storage
 or logging calls, exact coordinator-hash presentation, and the non-local DataHub/secret gates.
+
+## Public submission package
+
+The repository now includes:
+
+- a judge-oriented README with exact local/live commands, safety boundaries, DataHub proof, and
+  repository map;
+- `SUBMISSION.md` with Devpost-ready problem, solution, DataHub usage, technical proof,
+  differentiation, testing instructions, disclosures, and only two explicit public URL
+  placeholders;
+- `docs/DEMO_RECORDING.md` with a 2:35–2:45 shot list, exact narration, preflight, and frame-level
+  redaction review;
+- `docs/CLAIMS.md`, `docs/PRIVACY.md`, and `docs/LIMITATIONS.md` with evidence-bound claims and exact
+  non-claims;
+- clearly labeled redacted non-runtime request, plan, and certificate examples plus the
+  coordinator-owned public hash summary; and
+- `docs/assets/forget-me-graph-social-card.png`, a text-only-prompt original 1732×908 image with
+  SHA-256 `f131b8dc5404f1153848febf8b6a8119ed284c33fd0081aaa510e784974b9549` and provenance in
+  `docs/ASSET_PROVENANCE.md`.
+
+Public-package validation parsed every JSON example, checked local Markdown links, found no external
+UI scripts/fonts/images/analytics, found no private key/access-key/bearer-token patterns, and found
+no raw selector default in the committed HTML or public examples. Runtime receipts and private live
+evidence remain uncommitted.
 
 ## Exact tunnel, configuration, and live sequence
 
@@ -303,18 +328,22 @@ Automated tests prove:
 - immutable approval hashes, destructive adapter allowlists, idempotency, retraining, independent
   verification, and certificate accuracy remain green.
 
-## Current deployment and remaining milestone
+## Current deployment and coordinator actions
 
 - The coordinator-verified backend deployment remains exact commit
-  `8a24421f99622140bfa3e75c8db7ec3923f100de`; all seed/workflow/write/reread/reset/restore,
-  readiness-transition, Lifeboat isolation, concurrency, and snapshot evidence above remains valid
-  and unchanged.
-- The judge-console candidate is this commit as returned by `git rev-parse HEAD`. It was built and
-  tested locally only. This project did not access AWS, deploy, request a token, or modify another
+  `8a24421f99622140bfa3e75c8db7ec3923f100de`; every live backend, readiness-transition, Lifeboat
+  isolation, concurrency, and snapshot result recorded above remains valid and unchanged.
+- Judge-facing product code is exact commit
+  `b9a33f3ac339cfdf26a448ec7c50d143da6721dd`. The final clean candidate is its documentation-only
+  successor at project HEAD, reported by `git rev-parse HEAD` after commit.
+- This project did not access AWS, deploy, request a token, copy private receipts, or modify another
   workspace.
-- Promotion requires one new out-of-band value: `FMG_SELECTOR_SECRET` in every non-local app
-  container. The coordinator continues to own secrets, AWS, deployment, rollback, public URL, and
-  live recording evidence.
-- Phase 6 public README, recording script, social card, Devpost copy, and
-  final claims/privacy audit will be delivered as the next documentation milestone. No backend
-  change is expected in that milestone.
+- Before promotion, supply `FMG_SELECTOR_SECRET` out of band to every non-local app container. Then
+  promote the final HEAD, verify `/api/health`, `/api/readiness`, protected planning, exact-plan
+  approval, guarded live execution, evidence downloads, and DataHub write/immediate reread.
+- Record the public demo with `docs/DEMO_RECORDING.md`, perform its redaction review, publish the
+  under-three-minute video, replace the two explicit URL placeholders in `SUBMISSION.md`, verify app
+  and video availability while signed out, and recheck the official Devpost rules/deadline.
+- The coordinator continues to own AWS, secrets, deployment, rollback, public availability,
+  screenshots, live recording evidence, and final submission. No further product-code change is
+  requested from this workspace.
