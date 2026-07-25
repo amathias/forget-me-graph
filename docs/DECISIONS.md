@@ -61,3 +61,19 @@ supported DataHub Python SDK. It never mutates shared lineage or deletes DataHub
 request identifier is hashed, and the property values contain only action status and evidence
 hashes. A successful receipt requires an immediate reread of `datasetProperties` with exact value
 matching. Readiness performs only connection, capability, entity, and lineage reads.
+
+## ADR-008: Exact, soft-deletable DataHub catalog fixture
+
+**Status:** Accepted
+
+DataHub's supported dataset-lineage API represents all ten demo nodes as dataset URNs. The feature
+table and model retain their executable `feature_table` and `ml_model` semantics in allowlisted
+`datasetProperties.customProperties`; this avoids unsupported cross-entity lineage while preserving
+the planner and adapter behavior.
+
+The catalog lifecycle command accepts only the fixed `forgetme.` ten-URN fixture and exact nine-edge
+graph. Seeding upserts the allocated domain, tag, dataset properties, domain assignments, tags, and
+transformed lineage, clears soft-delete status, then immediately rereads every aspect. Reset changes
+only those ten datasets to soft-deleted status; restore clears that status and rereads the complete
+fixture. Hard deletion is deliberately unsupported. Each operation writes a sanitized receipt with
+the fixture hash, exact URNs, observed status, verified aspects, and a receipt hash.

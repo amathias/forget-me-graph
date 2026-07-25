@@ -27,7 +27,9 @@ TICKETS = "urn:li:dataset:(urn:li:dataPlatform:duckdb,forgetme.raw.tickets,PROD)
 SUMMARY = (
     "urn:li:dataset:(urn:li:dataPlatform:duckdb,forgetme.analytics.customer_ticket_summary,PROD)"
 )
-FEATURES = "urn:li:mlFeatureTable:(forgetme,forgetme.customer_support_profile)"
+FEATURES = (
+    "urn:li:dataset:(urn:li:dataPlatform:duckdb,forgetme.features.customer_support_profile,PROD)"
+)
 
 
 class FakeMcpClient:

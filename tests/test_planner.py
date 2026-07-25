@@ -16,7 +16,9 @@ ROOT = Path(__file__).parents[1]
 CUSTOMERS = "urn:li:dataset:(urn:li:dataPlatform:duckdb,forgetme.raw.customers,PROD)"
 TICKETS = "urn:li:dataset:(urn:li:dataPlatform:duckdb,forgetme.raw.tickets,PROD)"
 VECTOR = "urn:li:dataset:(urn:li:dataPlatform:vector,forgetme.ticket_embeddings,PROD)"
-MODEL = "urn:li:mlModel:(urn:li:dataPlatform:mlflow,forgetme.customer_support_classifier,PROD)"
+MODEL = (
+    "urn:li:dataset:(urn:li:dataPlatform:mlflow,forgetme.model.customer_support_classifier,PROD)"
+)
 
 
 def _protected_selector():

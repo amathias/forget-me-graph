@@ -35,6 +35,7 @@ dev = [
 [project.scripts]
 forgetmegraph-api = "forgetmegraph.api:run"
 forgetmegraph-demo = "forgetmegraph.demo.seed:main"
+forgetmegraph-datahub = "forgetmegraph.demo.datahub_catalog:main"
 forgetmegraph-workflow = "forgetmegraph.demo.workflow:main"
 
 [tool.hatch.build.targets.wheel]

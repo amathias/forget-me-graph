@@ -47,7 +47,7 @@
     {
       "source_urn": "urn:li:dataset:(urn:li:dataPlatform:duckdb,forgetme.analytics.customer_ticket_summary,PROD)",
       "source_field": "customer_id",
-      "destination_urn": "urn:li:mlFeatureTable:(forgetme,forgetme.customer_support_profile)",
+      "destination_urn": "urn:li:dataset:(urn:li:dataPlatform:duckdb,forgetme.features.customer_support_profile,PROD)",
       "destination_field": "customer_id",
       "mapping_type": "direct_copy",
       "verification_strategy": "parameterized_count_query",
@@ -78,7 +78,7 @@
       "version": 1
     },
     {
-      "source_urn": "urn:li:mlFeatureTable:(forgetme,forgetme.customer_support_profile)",
+      "source_urn": "urn:li:dataset:(urn:li:dataPlatform:duckdb,forgetme.features.customer_support_profile,PROD)",
       "source_field": "customer_id",
       "destination_urn": "urn:li:dataset:(urn:li:dataPlatform:file,forgetme.training_snapshot.v1,PROD)",
       "destination_field": "customer_id",
@@ -91,7 +91,7 @@
     {
       "source_urn": "urn:li:dataset:(urn:li:dataPlatform:file,forgetme.training_snapshot.v1,PROD)",
       "source_field": "customer_id",
-      "destination_urn": "urn:li:mlModel:(urn:li:dataPlatform:mlflow,forgetme.customer_support_classifier,PROD)",
+      "destination_urn": "urn:li:dataset:(urn:li:dataPlatform:mlflow,forgetme.model.customer_support_classifier,PROD)",
       "destination_field": "training_manifest",
       "mapping_type": "learned_artifact_manifest",
       "verification_strategy": "active_manifest_reference",

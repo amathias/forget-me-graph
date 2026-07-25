@@ -77,13 +77,26 @@ python -m forgetmegraph.api
 ```
 
 For the live path, start the coordinator-owned GMS and MCP SSM tunnels, supply
-`DATAHUB_TOKEN` out of band, then run:
+`DATAHUB_TOKEN` out of band, then seed the exact DataHub fixture before running the workflow:
 
 ```powershell
 $env:DATAHUB_GMS_URL = 'http://127.0.0.1:8080'
 $env:DATAHUB_MCP_URL = 'http://127.0.0.1:8000/mcp'
+python -m forgetmegraph.demo.datahub_catalog seed-datahub
 python -m forgetmegraph.demo.workflow --approved-by demo-privacy-operator --seed --require-datahub
+python -m forgetmegraph.demo.datahub_catalog reset-datahub
+python -m forgetmegraph.demo.datahub_catalog restore-datahub
 ```
+
+`seed-datahub` upserts only the fixed ten `forgetme.` dataset URNs, allocated domain and tag, and
+exact nine-edge lineage, then rereads every written aspect. `reset-datahub` performs only a soft
+delete of those ten datasets. `restore-datahub` clears their soft-delete status and rereads the full
+fixture. All three operations reject foreign, extra, partial, or empty target sets and write
+sanitized receipts under `APP_STATE_DIR/datahub-catalog/`; none performs a hard delete.
+
+The feature-table and model nodes use DataHub dataset URNs because DataHub's supported lineage API
+does not represent dataset-to-ML-entity edges. Their executable `feature_table` and `ml_model`
+semantics remain explicit fixture metadata and continue to select the same real adapters.
 
 The coordinator-aligned API listens on port `8103` and exposes `GET /api/health` and
 `GET /api/readiness`. Readiness performs real non-mutating GMS connection and MCP

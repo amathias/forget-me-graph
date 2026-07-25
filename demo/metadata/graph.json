@@ -19,7 +19,7 @@
       "adapter": "duckdb"
     },
     {
-      "urn": "urn:li:mlFeatureTable:(forgetme,forgetme.customer_support_profile)",
+      "urn": "urn:li:dataset:(urn:li:dataPlatform:duckdb,forgetme.features.customer_support_profile,PROD)",
       "name": "features.customer_support_profile",
       "artifact_type": "feature_table",
       "adapter": "duckdb"
@@ -49,7 +49,7 @@
       "adapter": "training_snapshot"
     },
     {
-      "urn": "urn:li:mlModel:(urn:li:dataPlatform:mlflow,forgetme.customer_support_classifier,PROD)",
+      "urn": "urn:li:dataset:(urn:li:dataPlatform:mlflow,forgetme.model.customer_support_classifier,PROD)",
       "name": "model.customer_support_classifier",
       "artifact_type": "ml_model",
       "adapter": "sklearn_model"
@@ -81,7 +81,7 @@
     },
     {
       "source_urn": "urn:li:dataset:(urn:li:dataPlatform:duckdb,forgetme.analytics.customer_ticket_summary,PROD)",
-      "destination_urn": "urn:li:mlFeatureTable:(forgetme,forgetme.customer_support_profile)"
+      "destination_urn": "urn:li:dataset:(urn:li:dataPlatform:duckdb,forgetme.features.customer_support_profile,PROD)"
     },
     {
       "source_urn": "urn:li:dataset:(urn:li:dataPlatform:duckdb,forgetme.analytics.customer_ticket_summary,PROD)",
@@ -92,12 +92,12 @@
       "destination_urn": "urn:li:dataset:(urn:li:dataPlatform:file,forgetme.customer_support_export,PROD)"
     },
     {
-      "source_urn": "urn:li:mlFeatureTable:(forgetme,forgetme.customer_support_profile)",
+      "source_urn": "urn:li:dataset:(urn:li:dataPlatform:duckdb,forgetme.features.customer_support_profile,PROD)",
       "destination_urn": "urn:li:dataset:(urn:li:dataPlatform:file,forgetme.training_snapshot.v1,PROD)"
     },
     {
       "source_urn": "urn:li:dataset:(urn:li:dataPlatform:file,forgetme.training_snapshot.v1,PROD)",
-      "destination_urn": "urn:li:mlModel:(urn:li:dataPlatform:mlflow,forgetme.customer_support_classifier,PROD)"
+      "destination_urn": "urn:li:dataset:(urn:li:dataPlatform:mlflow,forgetme.model.customer_support_classifier,PROD)"
     }
   ]
 }
