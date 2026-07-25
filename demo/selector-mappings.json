@@ -1,0 +1,104 @@
+{
+  "mappings": [
+    {
+      "source_urn": "urn:li:dataset:(urn:li:dataPlatform:duckdb,forgetme.raw.customers,PROD)",
+      "source_field": "customer_id",
+      "destination_urn": "urn:li:dataset:(urn:li:dataPlatform:duckdb,forgetme.analytics.customer_ticket_summary,PROD)",
+      "destination_field": "customer_id",
+      "mapping_type": "direct_copy",
+      "verification_strategy": "parameterized_count_query",
+      "owner": "demo-data-team",
+      "evidence": "demo SQL transformation manifest",
+      "version": 1
+    },
+    {
+      "source_urn": "urn:li:dataset:(urn:li:dataPlatform:duckdb,forgetme.raw.tickets,PROD)",
+      "source_field": "customer_id",
+      "destination_urn": "urn:li:dataset:(urn:li:dataPlatform:duckdb,forgetme.analytics.customer_ticket_summary,PROD)",
+      "destination_field": "customer_id",
+      "mapping_type": "group_key",
+      "verification_strategy": "parameterized_count_query",
+      "owner": "demo-data-team",
+      "evidence": "demo SQL transformation manifest",
+      "version": 1
+    },
+    {
+      "source_urn": "urn:li:dataset:(urn:li:dataPlatform:duckdb,forgetme.raw.tickets,PROD)",
+      "source_field": "customer_id",
+      "destination_urn": "urn:li:dataset:(urn:li:dataPlatform:vector,forgetme.ticket_embeddings,PROD)",
+      "destination_field": "customer_id",
+      "mapping_type": "embedding_metadata",
+      "verification_strategy": "metadata_filter_count",
+      "owner": "demo-ml-team",
+      "evidence": "vector ingestion manifest",
+      "version": 1
+    },
+    {
+      "source_urn": "urn:li:dataset:(urn:li:dataPlatform:duckdb,forgetme.raw.tickets,PROD)",
+      "source_field": "customer_id",
+      "destination_urn": "urn:li:dataset:(urn:li:dataPlatform:duckdb,forgetme.analytics.ticket_category_counts,PROD)",
+      "destination_field": "aggregate_only",
+      "mapping_type": "irreversible_aggregate",
+      "verification_strategy": "policy_evidence",
+      "owner": "demo-privacy-team",
+      "evidence": "aggregate contains counts only and no subject key",
+      "version": 1
+    },
+    {
+      "source_urn": "urn:li:dataset:(urn:li:dataPlatform:duckdb,forgetme.analytics.customer_ticket_summary,PROD)",
+      "source_field": "customer_id",
+      "destination_urn": "urn:li:mlFeatureTable:(forgetme,forgetme.customer_support_profile)",
+      "destination_field": "customer_id",
+      "mapping_type": "direct_copy",
+      "verification_strategy": "parameterized_count_query",
+      "owner": "demo-ml-team",
+      "evidence": "feature build manifest",
+      "version": 1
+    },
+    {
+      "source_urn": "urn:li:dataset:(urn:li:dataPlatform:duckdb,forgetme.analytics.customer_ticket_summary,PROD)",
+      "source_field": "customer_id",
+      "destination_urn": "urn:li:dataset:(urn:li:dataPlatform:cache,forgetme.customer_summary_cache,PROD)",
+      "destination_field": "subject_token",
+      "mapping_type": "hmac_cache_key",
+      "verification_strategy": "token_key_lookup",
+      "owner": "demo-platform-team",
+      "evidence": "cache key contract",
+      "version": 1
+    },
+    {
+      "source_urn": "urn:li:dataset:(urn:li:dataPlatform:duckdb,forgetme.analytics.customer_ticket_summary,PROD)",
+      "source_field": "customer_id",
+      "destination_urn": "urn:li:dataset:(urn:li:dataPlatform:file,forgetme.customer_support_export,PROD)",
+      "destination_field": "customer_id",
+      "mapping_type": "direct_copy",
+      "verification_strategy": "csv_row_count",
+      "owner": "demo-data-team",
+      "evidence": "export build manifest",
+      "version": 1
+    },
+    {
+      "source_urn": "urn:li:mlFeatureTable:(forgetme,forgetme.customer_support_profile)",
+      "source_field": "customer_id",
+      "destination_urn": "urn:li:dataset:(urn:li:dataPlatform:file,forgetme.training_snapshot.v1,PROD)",
+      "destination_field": "customer_id",
+      "mapping_type": "snapshot_key",
+      "verification_strategy": "csv_row_count",
+      "owner": "demo-ml-team",
+      "evidence": "training snapshot manifest",
+      "version": 1
+    },
+    {
+      "source_urn": "urn:li:dataset:(urn:li:dataPlatform:file,forgetme.training_snapshot.v1,PROD)",
+      "source_field": "customer_id",
+      "destination_urn": "urn:li:mlModel:(urn:li:dataPlatform:mlflow,forgetme.customer_support_classifier,PROD)",
+      "destination_field": "training_manifest",
+      "mapping_type": "learned_artifact_manifest",
+      "verification_strategy": "active_manifest_reference",
+      "owner": "demo-ml-team",
+      "evidence": "model training manifest",
+      "version": 1
+    }
+  ]
+}
+

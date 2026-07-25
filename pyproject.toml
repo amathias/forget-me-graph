@@ -1,0 +1,54 @@
+[build-system]
+requires = ["hatchling>=1.27"]
+build-backend = "hatchling.build"
+
+[project]
+name = "forgetmegraph"
+version = "0.1.0"
+description = "DataHub-powered deletion, retraining, verification, and evidence orchestration"
+readme = "README.md"
+requires-python = ">=3.12"
+license = { text = "Apache-2.0" }
+dependencies = [
+  "cryptography>=43,<47",
+  "duckdb>=1.2,<2",
+  "fastapi>=0.115,<1",
+  "joblib>=1.4,<2",
+  "numpy>=2,<3",
+  "pydantic>=2.10,<3",
+  "scikit-learn>=1.6,<2",
+  "uvicorn[standard]>=0.34,<1",
+]
+
+[project.optional-dependencies]
+datahub = [
+  "acryl-datahub>=1.1,<2",
+  "mcp>=1.9,<2",
+]
+dev = [
+  "httpx>=0.28,<1",
+  "pytest>=8.3,<9",
+  "pytest-cov>=6,<8",
+  "ruff>=0.9,<1",
+]
+
+[project.scripts]
+forgetmegraph-api = "forgetmegraph.api:run"
+forgetmegraph-demo = "forgetmegraph.demo.seed:main"
+forgetmegraph-workflow = "forgetmegraph.demo.workflow:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/forgetmegraph"]
+
+[tool.pytest.ini_options]
+addopts = "-q"
+pythonpath = ["src"]
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+

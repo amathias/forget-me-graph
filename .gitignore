@@ -1,0 +1,17 @@
+.env
+.venv/
+__pycache__/
+.pytest_cache/
+.ruff_cache/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+node_modules/
+web/dist/
+demo/artifacts/
+demo/fixtures/forget-me-graph/
+demo/state/forget-me-graph/
+coverage.xml
+.coverage
+

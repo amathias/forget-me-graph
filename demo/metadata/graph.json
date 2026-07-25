@@ -1,0 +1,104 @@
+{
+  "artifacts": [
+    {
+      "urn": "urn:li:dataset:(urn:li:dataPlatform:duckdb,forgetme.raw.customers,PROD)",
+      "name": "raw.customers",
+      "artifact_type": "raw_dataset",
+      "adapter": "duckdb"
+    },
+    {
+      "urn": "urn:li:dataset:(urn:li:dataPlatform:duckdb,forgetme.raw.tickets,PROD)",
+      "name": "raw.tickets",
+      "artifact_type": "raw_dataset",
+      "adapter": "duckdb"
+    },
+    {
+      "urn": "urn:li:dataset:(urn:li:dataPlatform:duckdb,forgetme.analytics.customer_ticket_summary,PROD)",
+      "name": "analytics.customer_ticket_summary",
+      "artifact_type": "derived_dataset",
+      "adapter": "duckdb"
+    },
+    {
+      "urn": "urn:li:mlFeatureTable:(forgetme,forgetme.customer_support_profile)",
+      "name": "features.customer_support_profile",
+      "artifact_type": "feature_table",
+      "adapter": "duckdb"
+    },
+    {
+      "urn": "urn:li:dataset:(urn:li:dataPlatform:vector,forgetme.ticket_embeddings,PROD)",
+      "name": "vectors.ticket_embeddings",
+      "artifact_type": "vector_index",
+      "adapter": "sqlite_vector"
+    },
+    {
+      "urn": "urn:li:dataset:(urn:li:dataPlatform:cache,forgetme.customer_summary_cache,PROD)",
+      "name": "cache.customer_summary",
+      "artifact_type": "cache",
+      "adapter": "sqlite_cache"
+    },
+    {
+      "urn": "urn:li:dataset:(urn:li:dataPlatform:file,forgetme.customer_support_export,PROD)",
+      "name": "exports.customer_support.csv",
+      "artifact_type": "export",
+      "adapter": "csv"
+    },
+    {
+      "urn": "urn:li:dataset:(urn:li:dataPlatform:file,forgetme.training_snapshot.v1,PROD)",
+      "name": "training.customer_support.v1",
+      "artifact_type": "training_snapshot",
+      "adapter": "training_snapshot"
+    },
+    {
+      "urn": "urn:li:mlModel:(urn:li:dataPlatform:mlflow,forgetme.customer_support_classifier,PROD)",
+      "name": "model.customer_support_classifier",
+      "artifact_type": "ml_model",
+      "adapter": "sklearn_model"
+    },
+    {
+      "urn": "urn:li:dataset:(urn:li:dataPlatform:duckdb,forgetme.analytics.ticket_category_counts,PROD)",
+      "name": "analytics.ticket_category_counts",
+      "artifact_type": "aggregate",
+      "adapter": "duckdb",
+      "policy": "exempt"
+    }
+  ],
+  "edges": [
+    {
+      "source_urn": "urn:li:dataset:(urn:li:dataPlatform:duckdb,forgetme.raw.customers,PROD)",
+      "destination_urn": "urn:li:dataset:(urn:li:dataPlatform:duckdb,forgetme.analytics.customer_ticket_summary,PROD)"
+    },
+    {
+      "source_urn": "urn:li:dataset:(urn:li:dataPlatform:duckdb,forgetme.raw.tickets,PROD)",
+      "destination_urn": "urn:li:dataset:(urn:li:dataPlatform:duckdb,forgetme.analytics.customer_ticket_summary,PROD)"
+    },
+    {
+      "source_urn": "urn:li:dataset:(urn:li:dataPlatform:duckdb,forgetme.raw.tickets,PROD)",
+      "destination_urn": "urn:li:dataset:(urn:li:dataPlatform:vector,forgetme.ticket_embeddings,PROD)"
+    },
+    {
+      "source_urn": "urn:li:dataset:(urn:li:dataPlatform:duckdb,forgetme.raw.tickets,PROD)",
+      "destination_urn": "urn:li:dataset:(urn:li:dataPlatform:duckdb,forgetme.analytics.ticket_category_counts,PROD)"
+    },
+    {
+      "source_urn": "urn:li:dataset:(urn:li:dataPlatform:duckdb,forgetme.analytics.customer_ticket_summary,PROD)",
+      "destination_urn": "urn:li:mlFeatureTable:(forgetme,forgetme.customer_support_profile)"
+    },
+    {
+      "source_urn": "urn:li:dataset:(urn:li:dataPlatform:duckdb,forgetme.analytics.customer_ticket_summary,PROD)",
+      "destination_urn": "urn:li:dataset:(urn:li:dataPlatform:cache,forgetme.customer_summary_cache,PROD)"
+    },
+    {
+      "source_urn": "urn:li:dataset:(urn:li:dataPlatform:duckdb,forgetme.analytics.customer_ticket_summary,PROD)",
+      "destination_urn": "urn:li:dataset:(urn:li:dataPlatform:file,forgetme.customer_support_export,PROD)"
+    },
+    {
+      "source_urn": "urn:li:mlFeatureTable:(forgetme,forgetme.customer_support_profile)",
+      "destination_urn": "urn:li:dataset:(urn:li:dataPlatform:file,forgetme.training_snapshot.v1,PROD)"
+    },
+    {
+      "source_urn": "urn:li:dataset:(urn:li:dataPlatform:file,forgetme.training_snapshot.v1,PROD)",
+      "destination_urn": "urn:li:mlModel:(urn:li:dataPlatform:mlflow,forgetme.customer_support_classifier,PROD)"
+    }
+  ]
+}
+
