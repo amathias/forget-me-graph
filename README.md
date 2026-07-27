@@ -5,7 +5,10 @@
 **A DataHub-powered deletion and clean-retraining orchestrator with verifiable evidence.**
 
 [Open the public application](https://forgetme.datahub-hackathon.aaronmathias.com) ·
-[View the public repository](https://github.com/amathias/forget-me-graph)
+[View the public repository](https://github.com/amathias/forget-me-graph) ·
+[Follow the under-three-minute recording runbook](docs/DEMO_RECORDING.md)
+
+Demo video: **pending recording and public upload**. No video or screenshot is claimed yet.
 
 A source deletion does not remove the same subject from derived tables, feature data, vector
 indexes, caches, exports, training snapshots, or learned artifacts. Forget-Me-Graph turns a scoped
@@ -17,18 +20,28 @@ The result is deliberately precise: the demo finishes as `verified_with_limitati
 aggregate has no subject-addressable key. Clean-snapshot retraining is demonstrated; universal or
 mathematical machine unlearning is not claimed.
 
+## Architecture
+
+```mermaid
+flowchart LR
+    S["Masked synthetic selector"] --> P["Lineage-bound deletion planner"]
+    D["DataHub graph + metadata"] --> P
+    P --> A["Exact-plan human approval"]
+    A --> E["Purge, rebuild, evict, replace, retrain"]
+    E --> V["Independent store verification"]
+    V --> C["Evidence certificate + DataHub writeback"]
+```
+
 ## Judge journey
 
 The same-origin evidence console presents the complete workflow:
 
-1. Enter a masked synthetic selector at the privacy boundary.
-2. Inspect the exact 10-asset, 9-edge DataHub impact graph and selector mappings.
-3. Review deterministic purge, rebuild, vector deletion, eviction, replacement, retraining, and
-   exemption decisions.
-4. Approve the exact SHA-256 plan hash.
-5. Watch guarded adapters mutate the marked disposable fixture.
-6. Inspect independently queried before/after results.
-7. Download JSON/Markdown certificates and, in live mode, DataHub read and write/reread receipts.
+1. Enter a masked synthetic selector, then inspect the exact 10-asset, 9-edge DataHub impact graph
+   and deterministic action plan.
+2. Approve the exact SHA-256 plan hash and watch guarded adapters mutate only the marked disposable
+   fixture.
+3. Inspect independently queried results, explicit limitations, downloadable certificates, and
+   DataHub read/write/reread receipts.
 
 The UI does not simulate a second workflow: it calls the same planner, executor, verifier, and
 DataHub integration used by the command-line demo.

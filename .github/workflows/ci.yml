@@ -1,0 +1,48 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  base-install:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+      - name: Install without optional DataHub clients
+        run: python -m pip install -e ".[dev]"
+      - name: Verify optional-dependency boundary
+        run: python -m pytest
+
+  full:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Install with pinned DataHub clients
+        run: python -m pip install -e ".[dev,datahub]"
+      - name: Lint
+        run: python -m ruff check src tests
+      - name: Test and report coverage
+        run: python -m pytest --cov=forgetmegraph --cov-report=term-missing
+      - name: Check browser JavaScript syntax
+        run: node --check src/forgetmegraph/ui/app.js

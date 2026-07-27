@@ -7,6 +7,11 @@ from pathlib import Path
 
 import pytest
 
+pytest.importorskip(
+    "datahub",
+    reason="catalog proposal tests require the optional datahub dependency group",
+)
+
 from forgetmegraph.config import Settings
 from forgetmegraph.context import datahub as datahub_context
 from forgetmegraph.context.datahub import DataHubIntegrationError
