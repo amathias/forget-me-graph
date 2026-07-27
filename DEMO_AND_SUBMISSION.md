@@ -2,9 +2,12 @@
 
 ## Current state
 
-The judge-facing product and public submission package are complete in the repository. The
-coordinator still owns deployment, the public HTTPS URL, live recording, video publication, and
-final Devpost submission. Do not fabricate those values in committed material.
+The exact judge-facing product commit
+`c999d33e2b51485fa4abc84b46ce64d4e91e6b2a` is deployed at
+<https://forgetme.datahub-hackathon.aaronmathias.com>, and the public repository is
+<https://github.com/amathias/forget-me-graph>. The coordinator still owns deployment operations,
+live recording, video publication, screenshots, and the final Devpost submission. No recording or
+screenshot exists in the repository, and committed material must not imply otherwise.
 
 Authoritative artifacts:
 
@@ -48,14 +51,16 @@ The authoritative recording target is **2:35–2:45**, with a **2:55 hard stop**
 
 ## Final external checklist
 
-- [ ] Promote the final clean candidate with `FMG_SELECTOR_SECRET` supplied out of band.
+- [ ] Reconfirm the public application still serves exact product commit
+  `c999d33e2b51485fa4abc84b46ce64d4e91e6b2a`.
 - [ ] Verify health, readiness, protected planning, approved live execution, downloads, and DataHub
-  write/reread on the promoted candidate.
+  write/reread before recording without exposing the out-of-band selector secret.
 - [ ] Capture redacted screenshots from the public HTTPS site and DataHub; do not commit private
   receipts or selectors.
 - [ ] Record the authoritative script under 2:45 and perform the redaction review.
 - [ ] Publish the video and verify it while signed out.
-- [ ] Replace only the two explicit URL placeholders in `SUBMISSION.md`.
+- [ ] Add the verified public video URL to the Devpost entry; update the explicit pending-video
+  status in `SUBMISSION.md` only after the video actually exists.
 - [ ] Confirm the public repository, Apache 2.0 detection, About metadata, and public app availability.
 - [ ] Recheck the official Devpost rules and deadline immediately before submission.
 

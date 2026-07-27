@@ -2,22 +2,41 @@
 
 Target runtime: **2:35–2:45**. Hard stop: **2:55**.
 
+Recording status: **not yet recorded or published**. This runbook is a checklist, not evidence that
+a video or screenshot already exists.
+
 ## Before recording
 
-1. Use the coordinator-provided public HTTPS application after the UI candidate is promoted.
-2. Confirm the exact catalog is restored and `/api/readiness` returns HTTP 200 with:
-   - fixture `ready`;
-   - DataHub catalog `ready`;
-   - GMS and MCP `connected`;
-   - MCP capabilities `get_entities` and `get_lineage`.
-3. Open the evidence console in a clean browser window at 1440×900 or larger and 100% zoom. Enter the coordinator-provided synthetic demo selector before capture and leave the field masked.
-4. Keep the selector field masked. Close developer tools, terminals containing environment
+- [ ] Open <https://forgetme.datahub-hackathon.aaronmathias.com> and confirm the coordinator still
+  identifies the deployed product as exact commit
+  `c999d33e2b51485fa4abc84b46ce64d4e91e6b2a`.
+- [ ] Confirm the exact catalog is restored and `/api/readiness` returns HTTP 200 with fixture and
+  selector protection `ready`, DataHub catalog `ready`, GMS/MCP `connected`, and MCP capabilities
+  `get_entities` and `get_lineage`.
+- [ ] Open the evidence console in a clean browser window at 1440×900 or larger and 100% zoom. Set
+  request ID `judge-recording-001`, enter the coordinator-provided synthetic demo selector before
+  capture, and leave the field masked.
+- [ ] Keep the selector field masked. Close developer tools, terminals containing environment
    variables, AWS consoles, secret managers, unrelated tabs, and notifications.
-5. Prepare DataHub in a second tab at the allowlisted customers dataset, with the visible
+- [ ] Prepare DataHub in a second tab at the allowlisted customers dataset, with the visible
    `forgetme.*` evidence properties and lineage graph. Do not expose authorization headers, raw MCP
    responses, selectors, or private receipts.
-6. Use request ID `judge-recording-001` and approver `demo-privacy-operator`.
-7. Record without copyrighted music, third-party marks, or personal notifications.
+- [ ] Leave approver `demo-privacy-operator`, **Reset synthetic fixture first**, and **Require live
+  DataHub read/write** selected.
+- [ ] Record without copyrighted music, unrelated third-party marks, or personal notifications.
+
+## Exact operator sequence
+
+1. Start on the hero with the HTTP 200 execution gates visible.
+2. Scroll to Request and submit the already-masked synthetic selector.
+3. Pause on the protected token, plan SHA-256, ten-node graph, and versioned mapping explanation.
+4. Scroll through the action table and point out the aggregate exemption.
+5. Select the approval checkbox and execute with both safety checkboxes still selected.
+6. Keep the execution timeline visible until verification and write/reread complete.
+7. Show the verification matrix, `verified_with_limitations`, and certificate download buttons.
+8. Switch to the prepared DataHub tab and show only the lineage plus allowlisted `forgetme.*`
+   properties.
+9. Return to the console proof strip, deliver the closing line, and stop by 2:55.
 
 ## Shot list and narration
 
@@ -31,7 +50,8 @@ Target runtime: **2:35–2:45**. Hard stop: **2:55**.
 
 ### 0:18–0:42 — Privacy-scoped request
 
-**Action:** Scroll to Request. Leave the already-entered selector masked and submit the synthetic request.
+**Action:** Scroll to Request. Leave the already-entered selector masked and submit the synthetic
+request.
 
 > The raw selector crosses only the intake boundary. The visible workflow uses a protected token.
 > No subject record or raw selector goes to an LLM—this workflow is deterministic.
@@ -52,7 +72,8 @@ Target runtime: **2:35–2:45**. Hard stop: **2:55**.
 > retraining. This aggregate has no subject key, so it is exempt instead of being falsely marked
 > deleted. Approval binds to this exact SHA-256 plan.
 
-**Action:** Check the approval box and execute with both reset and live DataHub required.
+**Action:** Check the approval box and execute with both **Reset synthetic fixture first** and
+**Require live DataHub read/write** still selected.
 
 ### 1:25–2:00 — Real execution
 
@@ -85,10 +106,13 @@ Target runtime: **2:35–2:45**. Hard stop: **2:55**.
 
 ## Redaction review
 
-- Selector input remained masked in every frame.
-- No raw fixture rows, subject name, request body, token value, secret, authorization header, MCP
+- [ ] Selector input remained masked in every frame.
+- [ ] No raw fixture rows, subject name, request body, token value, secret, authorization header, MCP
   payload, terminal history, or private receipt appeared.
-- Certificate limitation and `verified_with_limitations` status are legible.
-- DataHub lineage and supported evidence properties are legible.
-- The video is public, English, under three minutes, and works in a signed-out browser.
-- The final URL and video URL are entered in `SUBMISSION.md` and verified before submission.
+- [ ] Certificate limitation and `verified_with_limitations` status are legible.
+- [ ] DataHub lineage and supported evidence properties are legible.
+- [ ] No narration calls clean-snapshot retraining mathematical or universal unlearning.
+- [ ] The video is public, English, under three minutes, and works in a signed-out browser.
+- [ ] The public app and repository links are correct in `SUBMISSION.md`; after publication, add the
+  verified video URL to the Devpost entry and replace the explicit pending-video status only if the
+  repository copy is intentionally refreshed.

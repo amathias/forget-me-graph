@@ -4,6 +4,9 @@
 
 **A DataHub-powered deletion and clean-retraining orchestrator with verifiable evidence.**
 
+[Open the public application](https://forgetme.datahub-hackathon.aaronmathias.com) ·
+[View the public repository](https://github.com/amathias/forget-me-graph)
+
 A source deletion does not remove the same subject from derived tables, feature data, vector
 indexes, caches, exports, training snapshots, or learned artifacts. Forget-Me-Graph turns a scoped
 synthetic request into an exact lineage impact plan, requires approval for the immutable plan hash,
@@ -118,7 +121,10 @@ UI redaction, and evidence-download allowlists.
 
 ## Coordinator-verified live proof
 
-The deployed backend candidate `8a24421f99622140bfa3e75c8db7ec3923f100de` passed:
+The exact public product is commit `c999d33e2b51485fa4abc84b46ce64d4e91e6b2a`, deployed at
+[forgetme.datahub-hackathon.aaronmathias.com](https://forgetme.datahub-hackathon.aaronmathias.com).
+Its coordinator-owned workflow evidence was captured on backend commit
+`8a24421f99622140bfa3e75c8db7ec3923f100de`, which passed:
 
 - exact seed of 10 active datasets and 9 lineage edges;
 - approved workflow with `verified_with_limitations`;
@@ -131,7 +137,9 @@ The deployed backend candidate `8a24421f99622140bfa3e75c8db7ec3923f100de` passed
 Public-safe hashes are in [live-evidence-summary.json](examples/live-evidence-summary.json).
 Coordinator provenance and exact operational commands remain in
 [COORDINATOR_HANDOFF.md](COORDINATOR_HANDOFF.md). Runtime receipts, selectors, credentials, and raw
-MCP responses are intentionally not committed.
+MCP responses are intentionally not committed. The current deployed descendant adds the judge
+console, selector-secret readiness hardening, and exact client pins; no new workflow receipt or
+screenshot is claimed for that documentation/release successor.
 
 ## Repository map
 
@@ -144,7 +152,7 @@ MCP responses are intentionally not committed.
 - `demo/selector-mappings.json` — versioned selector propagation metadata
 - `examples/` — redacted non-runtime examples and coordinator-owned public hashes
 - `docs/DEMO_RECORDING.md` — under-three-minute recording runbook
-- `SUBMISSION.md` — Devpost-ready copy and final placeholders
+- `SUBMISSION.md` — Devpost-ready copy, public links, and truthful pending-video status
 
 ## Submission facts
 

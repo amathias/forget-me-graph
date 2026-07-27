@@ -14,6 +14,12 @@ Trace one deletion through the DataHub graph. Execute every consequence. Prove t
 
 **Secondary fit:** Agents That Do Real Work
 
+The primary fit is the end-to-end ML response path: DataHub traces raw inputs through features and
+a training snapshot to a model, then Forget-Me-Graph rebuilds that path, retrains the toy model,
+switches its active manifest, and verifies the replacement. The secondary fit is equally concrete:
+the application reads current DataHub context, performs approval-gated work across heterogeneous
+stores, and writes the verified result back to DataHub.
+
 ## Short description
 
 Forget-Me-Graph is a DataHub-powered deletion and clean-retraining orchestrator. It reads live
@@ -29,6 +35,14 @@ tables, features, embeddings, caches, exports, training snapshots, and models. D
 the blast radius, but dataset-level edges cannot tell an executor how to find one subject. Deletion
 tools, meanwhile, rarely understand learned artifacts. We built the orchestration and evidence
 layer between those worlds.
+
+## Use case and users
+
+The demo represents a privacy operator working with data-platform and ML-platform teams. A single
+synthetic subject request must be handled across operational data, derived tables, feature data,
+embeddings, caches, exports, a training snapshot, and a learned artifact. The output is not a vague
+“done” message: it is an exact plan, an approval record, independently checked results, explicit
+limitations, and a downloadable evidence certificate.
 
 ## What it does
 
@@ -62,6 +76,23 @@ mathematical or universal machine unlearning.
   properties and immediately rereads the aspect.
 - DataHub lineage is never mutated by the workflow, and no DataHub entity is hard-deleted.
 
+## Architecture
+
+```text
+Same-origin evidence console
+  -> privacy boundary and protected selector
+  -> live DataHub MCP/GMS context gate
+  -> explicit selector mappings + deterministic policy
+  -> approval bound to the exact plan SHA-256
+  -> allowlisted purge/rebuild/retrain adapters
+  -> independent verifier + JSON/Markdown certificate
+  -> supported DataHub SDK write + immediate reread
+```
+
+No LLM participates in the executable path. Dataset lineage determines impact scope; versioned
+selector mappings determine how a subject can be addressed at each descendant. Missing context,
+mapping, namespace markers, approval, or verification evidence blocks the relevant work.
+
 ## How we built it
 
 - Python 3.12, FastAPI, Pydantic
@@ -75,9 +106,36 @@ Keeping the UI same-origin removes a separate credential boundary and lets the c
 exact planner/executor/verifier used by the CLI. Deterministic code—not an LLM—controls traversal,
 policy, approval binding, execution ordering, and status aggregation.
 
+## Product-relevant challenges
+
+- **A successful metadata call can still mean “not found.”** We replaced configuration inference
+  with exact, non-mutating readiness checks for the allocated domain, tag, ten active datasets,
+  nine edges, MCP capabilities, and selector-protection contract.
+- **Dataset lineage is not row-level lineage.** We introduced explicit, versioned selector mappings
+  and fail closed instead of guessing how a subject key propagates.
+- **Model replacement is easy to overclaim.** The product verifies a rebuilt subject-free snapshot,
+  retired manifest, and fully retrained toy model while explicitly declining to call that universal
+  or mathematical unlearning.
+- **A shared catalog needs isolation guarantees.** Namespace guards, exact target allowlists,
+  reversible soft reset/restore, and immediate rereads prevent this workflow from acting on another
+  project.
+
+## Accomplishments
+
+- One approval-gated workflow spans real DuckDB, SQLite, vector, cache, CSV, snapshot, and
+  scikit-learn adapters.
+- Current DataHub context gates execution, and a supported SDK patch is immediately reread for exact
+  evidence equality.
+- The certificate distinguishes verified work from the one documented, subject-unaddressable
+  aggregate exemption.
+- Coordinator validation proved reset/readiness transitions, foreign-project preservation,
+  concurrent isolation, and an exact certificate match from a read-only snapshot.
+- The public package has 45 passing tests at 89% coverage, deterministic redacted examples, an
+  Apache 2.0 license, and clean wheel/source-archive verification.
+
 ## Technical proof
 
-Coordinator-owned live validation of deployed backend commit
+Coordinator-owned live workflow validation of backend commit
 `8a24421f99622140bfa3e75c8db7ec3923f100de` proved:
 
 - 10 active datasets and 9 exact lineage edges;
@@ -89,7 +147,10 @@ Coordinator-owned live validation of deployed backend commit
 - an exact certificate match from a read-only post-evidence snapshot.
 
 The public-safe SHA-256 values are committed in `examples/live-evidence-summary.json`. Runtime
-receipts and private responses are not committed.
+receipts and private responses are not committed. The exact public product now deployed is
+`c999d33e2b51485fa4abc84b46ce64d4e91e6b2a`; it preserves that backend and adds the judge console,
+truthful selector-secret readiness validation, and pinned DataHub/MCP clients. This documentation
+audit did not rerun the live workflow and claims no new receipt or screenshot.
 
 ## What is original
 
@@ -108,6 +169,12 @@ failure, and out-of-scope are materially different outcomes.
 
 ## Testing instructions
 
+Try the public synthetic-data application at
+<https://forgetme.datahub-hackathon.aaronmathias.com>. Keep the selector masked and review the
+readiness, plan hash, aggregate limitation, and approval controls before executing.
+
+For a clean local evaluation:
+
 ```powershell
 python -m pip install -e ".[dev,datahub]"
 python -m forgetmegraph.demo.seed seed
@@ -118,14 +185,20 @@ Open `http://127.0.0.1:8103`. For a credential-free local run, clear **Require l
 read/write** before approval. For the live path, follow the token-safe tunnel and catalog commands
 in `COORDINATOR_HANDOFF.md`.
 
-## Public links — complete before submission
+For adoption beyond the disposable demo, teams provide their own marked fixture or adapter roots,
+register exact DataHub namespaces and selector mappings, and implement artifact-specific
+verification. Production secrets and DataHub credentials remain out of band; the repository does
+not include them. This project is a synthetic reference workflow, not a production compliance
+certification.
 
-- Application: `<PUBLIC_HTTPS_URL>`
-- Repository: `https://github.com/amathias/forget-me-graph`
-- Demo video: `<PUBLIC_VIDEO_URL>`
+## Public links
 
-These placeholders are intentionally not fabricated. Verify the application and video in a
-signed-out browser and recheck the official rules before submitting.
+- Application: <https://forgetme.datahub-hackathon.aaronmathias.com>
+- Repository: <https://github.com/amathias/forget-me-graph>
+- Demo video: Not yet recorded or published. No video or screenshot is claimed by this repository.
+
+Before the final Devpost submission, publish the under-three-minute recording and verify both the
+application and video in a signed-out browser.
 
 ## Submission disclosures
 
@@ -134,4 +207,5 @@ signed-out browser and recheck the official rules before submitting.
 - Synthetic data is generated by the repository.
 - Apache 2.0 licensed.
 - No real personal information, secrets, runtime receipts, or copyrighted music/assets are included.
+- No recording or screenshot is claimed until the public video is captured, reviewed, and published.
 - Limitations and privacy boundaries are documented in `docs/`.

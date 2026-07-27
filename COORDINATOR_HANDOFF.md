@@ -22,14 +22,15 @@ not deploy, access EC2, request a token value, or modify another workspace.
 
 | Field | Current value |
 |---|---|
-| Status | Release-hardening successor verified locally; coordinator promotion and recording pending |
-| Milestone | Selector-readiness contract and exact integration pins complete; coordinator-owned promotion, availability, recording, and Devpost operations remain |
-| Current deployed candidate | `8a24421f99622140bfa3e75c8db7ec3923f100de` |
+| Status | Exact release-hardening product deployed; final recording/video/Devpost operations pending |
+| Milestone | Judge-facing submission copy and recording checklist finalized without claiming unrecorded media |
+| Current deployed product | `c999d33e2b51485fa4abc84b46ce64d4e91e6b2a` at `https://forgetme.datahub-hackathon.aaronmathias.com` |
 | Prior deployed commits | `477604258142f460bc1946b56f9c685d3cd9e61b` and `478b54128649d68c17454d7562290b30e6c2950e` |
 | Prior live findings | `4776042` failed closed on incomplete lineage; `478b541` exposed the absent/reset readiness false positive fixed by `8a24421` |
-| Judge UI code commit | `b9a33f3ac339cfdf26a448ec7c50d143da6721dd`; deployed backend remains `8a24421` until coordinator promotion |
+| Judge UI code commit | `b9a33f3ac339cfdf26a448ec7c50d143da6721dd`; included in deployed product `c999d33` |
 | Prior public candidate | `85828900cc0433bff9f3e0dc5032dcd3a0116c5c` (independently release-reviewed by the coordinator) |
-| Release-hardening candidate | This commit as reported by `git rev-parse HEAD`; no new live evidence is claimed |
+| Deployed release-hardening candidate | `c999d33e2b51485fa4abc84b46ce64d4e91e6b2a` |
+| Submission documentation HEAD | This documentation-only successor as reported by `git rev-parse HEAD`; no product-code or new live-evidence claim |
 | Build command | `python -m pip install -e ".[dev,datahub]"` |
 | Test command | `python -m ruff check src tests; python -m pytest --cov=forgetmegraph --cov-report=term-missing -q` |
 | Test evidence | 45 passing tests, 89% total coverage, Ruff clean, JavaScript syntax clean; clean wheel and source-archive installs contain all UI assets and exact DataHub clients |
@@ -131,20 +132,24 @@ content does not expose the provided value. The `datahub` optional dependency pi
 coordinator-verified client versions so an archive deployment cannot silently select a different
 integration stack.
 
-This successor was verified only in the local project workspace. It preserves all coordinator-owned
-live results above and does not claim a new deployment, live workflow, receipt, or readiness result.
+The coordinator reports exact commit `c999d33e2b51485fa4abc84b46ce64d4e91e6b2a` is now deployed at
+the public application URL. This project workspace did not access that deployment. The workflow,
+receipt, reset/isolation, concurrency, and snapshot evidence above remains explicitly attributed to
+backend commit `8a24421f99622140bfa3e75c8db7ec3923f100de`; no new workflow receipt, screenshot, or recording is
+claimed for `c999d33` or this documentation-only successor.
 
 ## Public submission package
 
 The repository now includes:
 
 - a judge-oriented README with exact local/live commands, safety boundaries, DataHub proof, and
-  repository map;
+  repository map plus the actual public application and repository URLs;
 - `SUBMISSION.md` with Devpost-ready problem, solution, DataHub usage, technical proof,
-  differentiation, testing instructions, disclosures, and only two explicit public URL
-  placeholders;
-- `docs/DEMO_RECORDING.md` with a 2:35–2:45 shot list, exact narration, preflight, and frame-level
-  redaction review;
+  category fit, architecture, use case, adoption summary, challenges, accomplishments, testing
+  instructions, disclosures, actual app/repository URLs, and an explicit not-yet-published video
+  status;
+- `docs/DEMO_RECORDING.md` with a 2:35–2:45 shot list, exact operator sequence and narration,
+  preflight, and unchecked frame-level redaction review;
 - `docs/CLAIMS.md`, `docs/PRIVACY.md`, and `docs/LIMITATIONS.md` with evidence-bound claims and exact
   non-claims;
 - clearly labeled redacted non-runtime request, plan, and certificate examples plus the
@@ -353,21 +358,22 @@ Automated tests prove:
 
 ## Current deployment and coordinator actions
 
-- The coordinator-verified backend deployment remains exact commit
-  `8a24421f99622140bfa3e75c8db7ec3923f100de`; every live backend, readiness-transition, Lifeboat
-  isolation, concurrency, and snapshot result recorded above remains valid and unchanged.
-- The prior public candidate is exact commit
-  `85828900cc0433bff9f3e0dc5032dcd3a0116c5c`. The release-hardening candidate is project HEAD,
-  reported by `git rev-parse HEAD` after commit; no new live evidence is claimed for it.
+- The coordinator reports exact product commit
+  `c999d33e2b51485fa4abc84b46ce64d4e91e6b2a` deployed at
+  `https://forgetme.datahub-hackathon.aaronmathias.com`.
+- Every workflow, readiness-transition, Lifeboat isolation, concurrency, and snapshot result
+  recorded above remains attributed to backend commit
+  `8a24421f99622140bfa3e75c8db7ec3923f100de`. Deployment of `c999d33` is not represented as a new
+  workflow receipt or recording.
+- The submission documentation successor is project HEAD after the documentation-only commit; it
+  changes no product code, tests, dependencies, runtime configuration, generated evidence, or image
+  asset.
 - This project did not access AWS, deploy, request a token, copy private receipts, or modify another
   workspace.
-- Before promotion, supply a minimum-16-character `FMG_SELECTOR_SECRET` out of band to every
-  non-local app container. Install the pinned `datahub` extra, then promote the final HEAD and
-  verify `/api/health`, `/api/readiness`, protected planning, exact-plan approval, guarded live
-  execution, evidence downloads, and DataHub write/immediate reread.
 - Record the public demo with `docs/DEMO_RECORDING.md`, perform its redaction review, publish the
-  under-three-minute video, replace the two explicit URL placeholders in `SUBMISSION.md`, verify app
-  and video availability while signed out, and recheck the official Devpost rules/deadline.
+  under-three-minute video, add the verified video URL to Devpost, verify app/video availability
+  while signed out, and recheck the official Devpost rules/deadline. Do not replace the explicit
+  pending-video status in Git until a public recording actually exists.
 - The coordinator continues to own AWS, secrets, deployment, rollback, public availability,
   screenshots, live recording evidence, and final submission. No further product-code change is
   requested from this workspace.
