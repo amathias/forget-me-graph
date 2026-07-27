@@ -2,6 +2,7 @@ import asyncio
 import json
 from datetime import UTC, datetime
 from hashlib import sha256
+from importlib.util import find_spec
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -152,6 +153,10 @@ class FakeGraph:
         return SimpleNamespace(customProperties=self.properties)
 
 
+@pytest.mark.skipif(
+    find_spec("datahub") is None,
+    reason="SDK writeback proposal test requires the optional datahub dependency group",
+)
 def test_sdk_writeback_is_allowlisted_reread_and_receipted() -> None:
     plan, certificate = _plan_and_certificate()
     properties = {
