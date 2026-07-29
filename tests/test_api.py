@@ -1,7 +1,7 @@
 import pytest
 from fastapi.testclient import TestClient
 
-from forgetmegraph.api import app
+from forgetmegraph.api import _interactive_docs_enabled, app
 from forgetmegraph.context.datahub import DataHubCapabilityStatus
 
 
@@ -11,6 +11,26 @@ def test_coordinator_health_contract() -> None:
     assert response.status_code == 200
     assert response.json()["status"] == "ok"
     assert response.json()["project"] == "forget-me-graph"
+
+
+def test_interactive_api_docs_are_local_only() -> None:
+    assert _interactive_docs_enabled("local") is True
+    assert _interactive_docs_enabled("test") is True
+    assert _interactive_docs_enabled("hackathon") is False
+    assert _interactive_docs_enabled("production") is False
+
+
+def test_nonlocal_responses_include_security_headers(monkeypatch) -> None:
+    monkeypatch.setenv("APP_ENV", "production")
+
+    response = TestClient(app).get("/api/demo/overview")
+
+    assert response.status_code == 200
+    assert response.headers["content-security-policy"].startswith("default-src 'self'")
+    assert response.headers["strict-transport-security"] == "max-age=31536000"
+    assert response.headers["x-content-type-options"] == "nosniff"
+    assert response.headers["x-frame-options"] == "DENY"
+    assert response.headers["cache-control"] == "no-store"
 
 
 def test_readiness_fails_closed_without_fixture_or_datahub(monkeypatch, tmp_path) -> None:

@@ -131,3 +131,19 @@ provided invalid value never falls back.
 The live integration extra pins `acryl-datahub==1.6.0.15` and `mcp==1.28.1`, the exact
 coordinator-verified client versions, so wheel and source-archive installation cannot silently
 resolve a different DataHub/MCP client stack.
+
+## ADR-013: Credential-free judging uses bounded public admission
+
+**Status:** Accepted
+
+The hosted demo remains usable without a judge account or shared access credential. In non-local
+mode it accepts only the single documented synthetic subject, limits plan creation per client and
+globally, permits only one active execution, rejects excess work instead of queueing it, enforces a
+short global cooldown, and caps per-client plus global runs in a rolling ten-minute window. A
+refusal returns `429` with `Retry-After`, allowing the UI to explain when a judge should retry.
+
+These controls reduce accidental and automated abuse without pretending to authenticate a privacy
+operator. They are deliberately process-local, reset on restart, and are not distributed
+denial-of-service protection. Local/test workflows retain unrestricted synthetic selector coverage
+for development. Non-local API documentation is disabled and same-origin browser security headers
+are applied without introducing third-party services.

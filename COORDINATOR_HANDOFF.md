@@ -22,8 +22,8 @@ not deploy, access EC2, request a token value, or modify another workspace.
 
 | Field | Current value |
 |---|---|
-| Status | Exact release-hardening product deployed; final recording/video/Devpost operations pending |
-| Milestone | Judge-facing submission copy and recording checklist finalized without claiming unrecorded media |
+| Status | Existing release remains deployed; credential-free public abuse-hardening successor verified locally and pending coordinator promotion |
+| Milestone | Bound public judge execution without requiring an account or shared access token |
 | Current deployed product | `c999d33e2b51485fa4abc84b46ce64d4e91e6b2a` at `https://forgetme.datahub-hackathon.aaronmathias.com` |
 | Prior deployed commits | `477604258142f460bc1946b56f9c685d3cd9e61b` and `478b54128649d68c17454d7562290b30e6c2950e` |
 | Prior live findings | `4776042` failed closed on incomplete lineage; `478b541` exposed the absent/reset readiness false positive fixed by `8a24421` |
@@ -33,7 +33,7 @@ not deploy, access EC2, request a token value, or modify another workspace.
 | Submission documentation HEAD | This documentation-only successor as reported by `git rev-parse HEAD`; no product-code or new live-evidence claim |
 | Build command | `python -m pip install -e ".[dev,datahub]"` |
 | Test command | `python -m ruff check src tests; python -m pytest --cov=forgetmegraph --cov-report=term-missing -q` |
-| Test evidence | 45 passing tests, 89% total coverage, Ruff clean, JavaScript syntax clean; clean wheel and source-archive installs contain all UI assets and exact DataHub clients |
+| Test evidence | 51 passing tests, 90% total coverage, Ruff clean, JavaScript syntax clean; clean wheel and source archive built, and isolated wheel install contains the API, abuse guard, and all UI assets |
 | Local demo result | `verified_with_limitations` because the subject-unaddressable aggregate is explicitly exempt |
 | Live evidence | Coordinator-owned deployed evidence passed; exact hashes are recorded below |
 
@@ -137,6 +137,39 @@ the public application URL. This project workspace did not access that deploymen
 receipt, reset/isolation, concurrency, and snapshot evidence above remains explicitly attributed to
 backend commit `8a24421f99622140bfa3e75c8db7ec3923f100de`; no new workflow receipt, screenshot, or recording is
 claimed for `c999d33` or this documentation-only successor.
+
+### Credential-free public abuse-hardening successor
+
+The next product candidate preserves a public, account-free judge journey while reducing the
+unauthenticated mutation surface:
+
+- non-local mode accepts only the documented synthetic selector `42`; local/test mode remains
+  unrestricted for fixture and regression coverage;
+- plan admission defaults to 20 requests per client and 120 globally per rolling minute;
+- execution admits one active run, rejects rather than queues overlap, enforces a 15-second global
+  cooldown, and defaults to three runs per client plus twelve globally per rolling ten minutes;
+- capacity refusals return HTTP 429 with an integer `Retry-After`, which the same-origin UI presents
+  as a judge-readable wait interval;
+- the limits are process-local and deliberately documented as abuse reduction rather than
+  authentication, multi-tenant authorization, or distributed denial-of-service protection;
+- non-local FastAPI Swagger, ReDoc, and OpenAPI routes are disabled; and
+- non-local responses add a same-origin Content Security Policy, anti-framing, no-sniff,
+  no-referrer, permissions, cross-origin isolation, HSTS, and no-store headers for demo APIs.
+
+The new non-secret knobs are `DEMO_ALLOWED_SELECTOR`,
+`DEMO_PLAN_CLIENT_LIMIT_PER_MINUTE`, `DEMO_PLAN_GLOBAL_LIMIT_PER_MINUTE`,
+`DEMO_RUN_CLIENT_LIMIT_PER_TEN_MINUTES`, `DEMO_RUN_GLOBAL_LIMIT_PER_TEN_MINUTES`, and
+`DEMO_RUN_COOLDOWN_SECONDS`. The checked-in defaults above are appropriate for the single-process
+hackathon deployment. No DataHub namespace, write operation, secret mechanism, fixture lifecycle,
+internal port, or public URL changes.
+
+Local verification passed 51 tests at 90% coverage, Ruff, JavaScript syntax, diff whitespace, a
+clean wheel/source-archive build, and an isolated wheel install containing the API, abuse guard,
+and all three UI assets. This successor has not accessed AWS, EC2, the live DataHub instance, or
+runtime secrets, and it claims no new live workflow evidence. The coordinator must promote only
+its exact committed product hash, retain the prior snapshot/receipt evidence, and confirm public
+headers, hidden documentation routes, selector refusal, rate behavior, health, readiness, and one
+guarded subject-42 workflow.
 
 ## Public submission package
 
@@ -361,6 +394,8 @@ Automated tests prove:
 - The coordinator reports exact product commit
   `c999d33e2b51485fa4abc84b46ce64d4e91e6b2a` deployed at
   `https://forgetme.datahub-hackathon.aaronmathias.com`.
+- The credential-free public abuse-hardening successor is pending exact commit, push, independent
+  verification, and coordinator-owned promotion; the currently deployed product is unchanged.
 - Every workflow, readiness-transition, Lifeboat isolation, concurrency, and snapshot result
   recorded above remains attributed to backend commit
   `8a24421f99622140bfa3e75c8db7ec3923f100de`. Deployment of `c999d33` is not represented as a new

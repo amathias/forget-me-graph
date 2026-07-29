@@ -130,7 +130,7 @@ policy, approval binding, execution ordering, and status aggregation.
   aggregate exemption.
 - Coordinator validation proved reset/readiness transitions, foreign-project preservation,
   concurrent isolation, and an exact certificate match from a read-only snapshot.
-- The public package has 45 passing tests at 89% coverage, deterministic redacted examples, an
+- The public package has 51 passing tests at 90% coverage, deterministic redacted examples, an
   Apache 2.0 license, and clean wheel/source-archive verification.
 
 ## Technical proof
@@ -170,8 +170,11 @@ failure, and out-of-scope are materially different outcomes.
 ## Testing instructions
 
 Try the public synthetic-data application at
-<https://forgetme.datahub-hackathon.aaronmathias.com>. Keep the selector masked and review the
-readiness, plan hash, aggregate limitation, and approval controls before executing.
+<https://forgetme.datahub-hackathon.aaronmathias.com>. Use synthetic selector `42`, keep it masked,
+and review the readiness, plan hash, aggregate limitation, and approval controls before executing.
+No account or access token is required. To keep this unauthenticated demo available for every
+judge, the service accepts only that one synthetic subject, rejects concurrent execution, and may
+return `429` with a short `Retry-After` delay when its transparent plan/run limits are reached.
 
 For a clean local evaluation:
 

@@ -1,3 +1,5 @@
+import os
+
 import uvicorn
 from fastapi import FastAPI, Request, Response, status
 from fastapi.exceptions import RequestValidationError
@@ -10,11 +12,47 @@ from forgetmegraph.demo.seed import DEMO_SECRET, MARKER
 from forgetmegraph.privacy.selector import SelectorProtectionError, validate_selector_secret
 from forgetmegraph.ui.router import router as ui_router
 
+
+def _interactive_docs_enabled(app_env: str) -> bool:
+    return app_env in {"local", "test"}
+
+
+_docs_enabled = _interactive_docs_enabled(os.getenv("APP_ENV", "local"))
 app = FastAPI(
     title="Forget-Me-Graph",
     version=__version__,
     description="Verified deletion and clean-retraining orchestration powered by DataHub.",
+    docs_url="/docs" if _docs_enabled else None,
+    redoc_url="/redoc" if _docs_enabled else None,
+    openapi_url="/openapi.json" if _docs_enabled else None,
 )
+
+
+@app.middleware("http")
+async def public_security_headers(request: Request, call_next):  # type: ignore[no-untyped-def]
+    response = await call_next(request)
+    if not _interactive_docs_enabled(Settings.from_env().app_env):
+        response.headers["Content-Security-Policy"] = (
+            "default-src 'self'; "
+            "script-src 'self'; "
+            "style-src 'self'; "
+            "img-src 'self' data:; "
+            "connect-src 'self'; "
+            "object-src 'none'; "
+            "base-uri 'none'; "
+            "frame-ancestors 'none'; "
+            "form-action 'self'"
+        )
+        response.headers["Cross-Origin-Opener-Policy"] = "same-origin"
+        response.headers["Cross-Origin-Resource-Policy"] = "same-origin"
+        response.headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=()"
+        response.headers["Referrer-Policy"] = "no-referrer"
+        response.headers["Strict-Transport-Security"] = "max-age=31536000"
+        response.headers["X-Content-Type-Options"] = "nosniff"
+        response.headers["X-Frame-Options"] = "DENY"
+        if request.url.path.startswith("/api/demo/"):
+            response.headers["Cache-Control"] = "no-store"
+    return response
 
 
 @app.exception_handler(RequestValidationError)

@@ -34,6 +34,9 @@ verification, and certificate aggregation are deterministic application code.
   evidence package.
 - UI screenshots and recordings must keep the selector input masked and must not open local fixture
   tables containing the synthetic subject.
+- Non-local public mode accepts only the documented synthetic selector `42`. It applies
+  process-local per-client and global admission limits and rejects overlapping runs; these are
+  availability controls, not user authentication or a production authorization system.
 
 ## Logging and transport
 
@@ -53,5 +56,6 @@ or Git.
 
 The local fixture necessarily contains synthetic rows so deletion can be demonstrated. The system
 minimizes their movement; it does not claim that the fixture contains no subject data. The current
-UI has process-local execution coordination and no durable resumable request store. These controls
+UI has process-local admission control and no durable resumable request store. Rate state resets
+when the process restarts and cannot stop a distributed denial-of-service attack. These controls
 are a demo privacy architecture, not a certification of legal compliance or production security.

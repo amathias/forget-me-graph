@@ -71,6 +71,11 @@ DataHub integration used by the command-line demo.
   selector mappings are checked before mutation.
 - Live environments force the DataHub read/write gate even if a client asks for local mode.
 - Evidence downloads use an exact filename allowlist and validated request IDs.
+- The hosted, unauthenticated demo accepts only synthetic subject `42`, rejects concurrent runs
+  instead of queueing them, and applies per-client plus global plan/run limits with `429
+  Retry-After` responses.
+- Non-local deployments disable interactive API documentation and return a restrictive
+  same-origin content policy, anti-framing, no-sniff, no-referrer, and HSTS headers.
 
 See [Privacy Boundary](docs/PRIVACY.md), [Defensible Claims](docs/CLAIMS.md), and
 [Limitations](docs/LIMITATIONS.md).
@@ -130,7 +135,8 @@ node --check src/forgetmegraph/ui/app.js
 The test suite covers selector propagation, missing mappings, approval/plan binding, fixture and
 namespace guards, idempotency, real adapters, retained-record failures, retraining, certificate
 accuracy, live-context fail-closed behavior, catalog seed/reset/restore isolation, readiness drift,
-UI redaction, and evidence-download allowlists.
+UI redaction, evidence-download allowlists, fixed public selector scope, admission control, and
+production security headers.
 
 ## Coordinator-verified live proof
 

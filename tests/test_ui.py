@@ -5,6 +5,7 @@ from types import SimpleNamespace
 from fastapi.testclient import TestClient
 
 from forgetmegraph.api import app
+from forgetmegraph.ui.router import _demo_guard
 
 
 def _client() -> TestClient:
@@ -218,3 +219,31 @@ def test_nonlocal_plan_fails_closed_without_selector_secret(monkeypatch) -> None
     assert response.status_code == 400
     assert response.json() == {"detail": "the deterministic plan could not be built"}
     assert "selector protection" not in response.text
+
+
+def test_public_plan_rejects_any_selector_outside_fixed_synthetic_subject(monkeypatch) -> None:
+    _demo_guard.reset()
+    monkeypatch.setenv("APP_ENV", "production")
+    monkeypatch.setenv("FMG_SELECTOR_SECRET", "production-ui-test-secret")
+
+    response = _client().post("/api/demo/plan", json=_plan_request("41"))
+
+    assert response.status_code == 400
+    assert response.json() == {
+        "detail": "the public demo accepts only its documented synthetic subject"
+    }
+
+
+def test_public_plan_returns_retry_after_when_client_limit_is_reached(monkeypatch) -> None:
+    _demo_guard.reset()
+    monkeypatch.setenv("APP_ENV", "production")
+    monkeypatch.setenv("FMG_SELECTOR_SECRET", "production-ui-test-secret")
+    monkeypatch.setenv("DEMO_PLAN_CLIENT_LIMIT_PER_MINUTE", "1")
+    client = _client()
+
+    assert client.post("/api/demo/plan", json=_plan_request()).status_code == 200
+    response = client.post("/api/demo/plan", json=_plan_request())
+
+    assert response.status_code == 429
+    assert response.headers["retry-after"]
+    assert response.json()["detail"] == "the public demo is busy; retry after the indicated delay"

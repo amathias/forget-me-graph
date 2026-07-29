@@ -14,8 +14,10 @@
   timestamp, an append-only ledger, or legal-grade audit evidence.
 - Local mode uses the checked-in executable graph and produces no DataHub read/write receipts.
   Live environments force current DataHub MCP context plus a supported write and immediate reread.
-- The web console has process-local run serialization and no durable job queue, authentication,
-  multi-tenant authorization, or cross-restart resume facility.
+- The web console is intentionally credential-free for judging. It restricts non-local execution
+  to synthetic subject `42`, rejects overlapping runs, and applies process-local per-client/global
+  limits, but it has no durable rate store, user authentication, multi-tenant authorization,
+  distributed denial-of-service protection, or cross-restart resume facility.
 - Only synthetic data may be used. The project is not legal advice and does not establish privacy
   law compliance.
 - Public URL, repository availability, and video publication are submission operations outside the

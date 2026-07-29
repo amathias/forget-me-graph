@@ -14,8 +14,8 @@ a video or screenshot already exists.
   selector protection `ready`, DataHub catalog `ready`, GMS/MCP `connected`, and MCP capabilities
   `get_entities` and `get_lineage`.
 - [ ] Open the evidence console in a clean browser window at 1440×900 or larger and 100% zoom. Set
-  request ID `judge-recording-001`, enter the coordinator-provided synthetic demo selector before
-  capture, and leave the field masked.
+  request ID `judge-recording-001`, enter synthetic demo selector `42` before capture, and leave
+  the field masked.
 - [ ] Keep the selector field masked. Close developer tools, terminals containing environment
    variables, AWS consoles, secret managers, unrelated tabs, and notifications.
 - [ ] Prepare DataHub in a second tab at the allowlisted customers dataset, with the visible
@@ -31,7 +31,9 @@ a video or screenshot already exists.
 2. Scroll to Request and submit the already-masked synthetic selector.
 3. Pause on the protected token, plan SHA-256, ten-node graph, and versioned mapping explanation.
 4. Scroll through the action table and point out the aggregate exemption.
-5. Select the approval checkbox and execute with both safety checkboxes still selected.
+5. Select the approval checkbox and execute with both safety checkboxes still selected. If the
+   public service reports a transparent `429` capacity delay, wait for the displayed `Retry-After`
+   interval and retry once; do not repeatedly submit.
 6. Keep the execution timeline visible until verification and write/reread complete.
 7. Show the verification matrix, `verified_with_limitations`, and certificate download buttons.
 8. Switch to the prepared DataHub tab and show only the lineage plus allowlisted `forgetme.*`

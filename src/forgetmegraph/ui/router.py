@@ -3,11 +3,12 @@ from __future__ import annotations
 import asyncio
 import json
 import re
+import secrets
 from hashlib import sha256
 from pathlib import Path
 from typing import Annotated
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Request
 from fastapi import Path as ApiPath
 from fastapi.responses import FileResponse
 from pydantic import BaseModel, ConfigDict, Field
@@ -16,10 +17,11 @@ from forgetmegraph.config import Settings
 from forgetmegraph.context.datahub import DataHubIntegrationError
 from forgetmegraph.demo.seed import DEMO_SECRET
 from forgetmegraph.demo.workflow import prepare_demo_workflow, run_workflow
+from forgetmegraph.ui.abuse import DemoAbuseGuard, DemoCapacityError
 
 router = APIRouter()
 UI_DIR = Path(__file__).resolve().parent
-_demo_lock = asyncio.Lock()
+_demo_guard = DemoAbuseGuard()
 _SAFE_REQUEST_ID = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{2,79}$")
 _ALLOWED_EVIDENCE_FILES = frozenset(
     {
@@ -44,6 +46,33 @@ class DemoRunRequest(DemoPlanRequest):
     approved: bool
     reset_synthetic_estate: bool = True
     require_datahub: bool = True
+
+
+def _public_controls_enabled(settings: Settings) -> bool:
+    return settings.app_env not in {"local", "test"}
+
+
+def _client_key(request: Request) -> str:
+    return request.client.host if request.client else "unknown-client"
+
+
+def _capacity_error(error: DemoCapacityError) -> HTTPException:
+    return HTTPException(
+        status_code=429,
+        detail="the public demo is busy; retry after the indicated delay",
+        headers={"Retry-After": str(error.retry_after_seconds)},
+    )
+
+
+def _require_public_selector(settings: Settings, selector_value: str) -> None:
+    if _public_controls_enabled(settings) and not secrets.compare_digest(
+        selector_value,
+        settings.demo_allowed_selector,
+    ):
+        raise HTTPException(
+            status_code=400,
+            detail="the public demo accepts only its documented synthetic subject",
+        )
 
 
 def _project_root() -> Path:
@@ -181,12 +210,23 @@ def demo_overview() -> dict[str, object]:
 
 
 @router.post("/api/demo/plan")
-def demo_plan(request: DemoPlanRequest) -> dict[str, object]:
+def demo_plan(payload: DemoPlanRequest, request: Request) -> dict[str, object]:
+    settings = Settings.from_env()
+    if _public_controls_enabled(settings):
+        try:
+            _demo_guard.admit_plan(
+                _client_key(request),
+                client_limit=settings.demo_plan_client_limit_per_minute,
+                global_limit=settings.demo_plan_global_limit_per_minute,
+            )
+        except DemoCapacityError as exc:
+            raise _capacity_error(exc) from exc
+    _require_public_selector(settings, payload.selector_value)
     try:
         prepared = prepare_demo_workflow(
             project_root=_project_root(),
-            request_id=request.request_id,
-            selector_value=request.selector_value,
+            request_id=payload.request_id,
+            selector_value=payload.selector_value,
             selector_secret=_selector_secret(),
         )
     except Exception as exc:
@@ -227,26 +267,40 @@ def demo_plan(request: DemoPlanRequest) -> dict[str, object]:
 
 
 @router.post("/api/demo/run")
-async def demo_run(request: DemoRunRequest) -> dict[str, object]:
-    if not request.approved:
+async def demo_run(payload: DemoRunRequest, request: Request) -> dict[str, object]:
+    if not payload.approved:
         raise HTTPException(status_code=403, detail="explicit approval is required")
     settings = Settings.from_env()
-    require_datahub = request.require_datahub or settings.app_env not in {"local", "test"}
+    _require_public_selector(settings, payload.selector_value)
+    controls_enabled = _public_controls_enabled(settings)
     try:
-        async with _demo_lock:
-            certificate = await asyncio.to_thread(
-                run_workflow,
-                root=settings.demo_fixture_root,
-                project_root=_project_root(),
-                approver=request.approver,
-                request_id=request.request_id,
-                selector_value=request.selector_value,
-                selector_secret=_selector_secret(),
-                expected_plan_hash=request.plan_hash,
-                seed=request.reset_synthetic_estate,
-                require_datahub=require_datahub,
-                settings=settings,
+        if controls_enabled:
+            _demo_guard.begin_run(
+                _client_key(request),
+                client_limit=settings.demo_run_client_limit_per_ten_minutes,
+                global_limit=settings.demo_run_global_limit_per_ten_minutes,
+                cooldown_seconds=settings.demo_run_cooldown_seconds,
             )
+        else:
+            _demo_guard.begin_unrestricted_run()
+    except DemoCapacityError as exc:
+        raise _capacity_error(exc) from exc
+
+    require_datahub = payload.require_datahub or settings.app_env not in {"local", "test"}
+    try:
+        certificate = await asyncio.to_thread(
+            run_workflow,
+            root=settings.demo_fixture_root,
+            project_root=_project_root(),
+            approver=payload.approver,
+            request_id=payload.request_id,
+            selector_value=payload.selector_value,
+            selector_secret=_selector_secret(),
+            expected_plan_hash=payload.plan_hash,
+            seed=payload.reset_synthetic_estate,
+            require_datahub=require_datahub,
+            settings=settings,
+        )
     except DataHubIntegrationError as exc:
         raise HTTPException(status_code=503, detail="the live DataHub gate failed closed") from exc
     except ValueError as exc:
@@ -255,6 +309,8 @@ async def demo_run(request: DemoRunRequest) -> dict[str, object]:
         raise HTTPException(status_code=400, detail="the approved workflow was refused") from exc
     except Exception as exc:
         raise HTTPException(status_code=500, detail="the workflow failed closed") from exc
+    finally:
+        _demo_guard.finish_run()
 
     evidence_dir = settings.demo_fixture_root.resolve() / "evidence" / certificate.request_id
     return {

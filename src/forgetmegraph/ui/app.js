@@ -41,8 +41,13 @@
     });
     const payload = await response.json().catch(() => ({}));
     if (!response.ok) {
+      const retryAfter = response.headers.get("Retry-After");
+      const retrySuffix =
+        response.status === 429 && retryAfter ? ` Try again in ${retryAfter} seconds.` : "";
       const error = new Error(
-        typeof payload.detail === "string" ? payload.detail : "The request failed closed.",
+        `${
+          typeof payload.detail === "string" ? payload.detail : "The request failed closed."
+        }${retrySuffix}`,
       );
       error.status = response.status;
       throw error;
