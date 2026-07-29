@@ -1,5 +1,19 @@
 # Coordinator Handoff: Forget-Me-Graph
 
+## 2026-07-29 public-demo boundary closeout
+
+| Field | Verified value |
+|---|---|
+| Exact deployed product | `d8e7913202a86c99020b369d8b16d67a8115fabf` |
+| Public endpoint | `https://forgetme.datahub-hackathon.aaronmathias.com` |
+| Public acceptance | Root, health, and strong readiness returned 200 |
+| Browser acceptance | One prominent `PUBLIC DEMO` notice rendered above the workflow and identified synthetic subject `42`, rate limits, the disposable estate, `forgetme.*` allocation, and the source/API/self-hosting link |
+| Hosted API documentation | `/docs`, `/redoc`, and `/openapi.json` returned 404 in `APP_ENV=hackathon`; local/development/test documentation remains enabled |
+| Verification | 51 tests passed, Ruff passed, JavaScript syntax passed, both GitHub Actions jobs passed, and exact `main` matched `origin/main` before promotion |
+
+The standard deployment rebuilt only the documented disposable local estate. It did not reseed
+the shared DataHub catalog or broaden the credential-free public execution contract.
+
 ## Relationship to the portfolio coordinator
 
 This project chat owns Forget-Me-Graph product code, tests, demo evidence, and submission material.
