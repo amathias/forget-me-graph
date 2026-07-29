@@ -148,9 +148,11 @@ Coordinator-owned live workflow validation of backend commit
 
 The public-safe SHA-256 values are committed in `examples/live-evidence-summary.json`. Runtime
 receipts and private responses are not committed. The exact public product now deployed is
-`c999d33e2b51485fa4abc84b46ce64d4e91e6b2a`; it preserves that backend and adds the judge console,
-truthful selector-secret readiness validation, and pinned DataHub/MCP clients. This documentation
-audit did not rerun the live workflow and claims no new receipt or screenshot.
+`d8a0e0ae8f6c79e71bba08cd3b0118b8cd37e48d`; it preserves that backend and adds the judge console,
+truthful selector-secret readiness validation, pinned DataHub/MCP clients, fixed public selector
+scope, bounded admission, hidden non-local API documentation, and production security headers.
+The coordinator verified those public guards without rerunning the live workflow, and this
+documentation audit claims no new workflow receipt or screenshot.
 
 ## What is original
 

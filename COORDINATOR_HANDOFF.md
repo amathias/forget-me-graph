@@ -22,14 +22,14 @@ not deploy, access EC2, request a token value, or modify another workspace.
 
 | Field | Current value |
 |---|---|
-| Status | Existing release remains deployed; credential-free public abuse-hardening successor verified locally and pending coordinator promotion |
+| Status | Credential-free public abuse-hardening successor is deployed and coordinator-verified |
 | Milestone | Bound public judge execution without requiring an account or shared access token |
-| Current deployed product | `c999d33e2b51485fa4abc84b46ce64d4e91e6b2a` at `https://forgetme.datahub-hackathon.aaronmathias.com` |
-| Prior deployed commits | `477604258142f460bc1946b56f9c685d3cd9e61b` and `478b54128649d68c17454d7562290b30e6c2950e` |
+| Current deployed product | `d8a0e0ae8f6c79e71bba08cd3b0118b8cd37e48d` at `https://forgetme.datahub-hackathon.aaronmathias.com` |
+| Prior deployed commits | `c999d33e2b51485fa4abc84b46ce64d4e91e6b2a`, `477604258142f460bc1946b56f9c685d3cd9e61b`, and `478b54128649d68c17454d7562290b30e6c2950e` |
 | Prior live findings | `4776042` failed closed on incomplete lineage; `478b541` exposed the absent/reset readiness false positive fixed by `8a24421` |
-| Judge UI code commit | `b9a33f3ac339cfdf26a448ec7c50d143da6721dd`; included in deployed product `c999d33` |
+| Judge UI code commit | `b9a33f3ac339cfdf26a448ec7c50d143da6721dd`; included in deployed product `d8a0e0a` |
 | Prior public candidate | `85828900cc0433bff9f3e0dc5032dcd3a0116c5c` (independently release-reviewed by the coordinator) |
-| Deployed release-hardening candidate | `c999d33e2b51485fa4abc84b46ce64d4e91e6b2a` |
+| Deployed abuse-hardening candidate | `d8a0e0ae8f6c79e71bba08cd3b0118b8cd37e48d` |
 | Submission documentation HEAD | This documentation-only successor as reported by `git rev-parse HEAD`; no product-code or new live-evidence claim |
 | Build command | `python -m pip install -e ".[dev,datahub]"` |
 | Test command | `python -m ruff check src tests; python -m pytest --cov=forgetmegraph --cov-report=term-missing -q` |
@@ -132,11 +132,12 @@ content does not expose the provided value. The `datahub` optional dependency pi
 coordinator-verified client versions so an archive deployment cannot silently select a different
 integration stack.
 
-The coordinator reports exact commit `c999d33e2b51485fa4abc84b46ce64d4e91e6b2a` is now deployed at
-the public application URL. This project workspace did not access that deployment. The workflow,
-receipt, reset/isolation, concurrency, and snapshot evidence above remains explicitly attributed to
-backend commit `8a24421f99622140bfa3e75c8db7ec3923f100de`; no new workflow receipt, screenshot, or recording is
-claimed for `c999d33` or this documentation-only successor.
+The coordinator previously deployed exact commit
+`c999d33e2b51485fa4abc84b46ce64d4e91e6b2a` at the public application URL. This project workspace
+did not access that deployment. The workflow, receipt, reset/isolation, concurrency, and snapshot
+evidence above remains explicitly attributed to backend commit
+`8a24421f99622140bfa3e75c8db7ec3923f100de`; no new workflow receipt, screenshot, or recording is
+claimed for `c999d33` or its documentation-only successor.
 
 ### Credential-free public abuse-hardening successor
 
@@ -162,6 +163,15 @@ The new non-secret knobs are `DEMO_ALLOWED_SELECTOR`,
 `DEMO_RUN_COOLDOWN_SECONDS`. The checked-in defaults above are appropriate for the single-process
 hackathon deployment. No DataHub namespace, write operation, secret mechanism, fixture lifecycle,
 internal port, or public URL changes.
+
+The coordinator promoted exact product commit
+`d8a0e0ae8f6c79e71bba08cd3b0118b8cd37e48d` and exact coordinator configuration commit
+`fa851d5044afc552e86c121efb544b86f5b6dcea`. Signed-out verification returned 200 for the judge UI,
+health, and strong readiness; 404 for Swagger, ReDoc, OpenAPI, GraphQL, and MCP routes; 400 for a
+selector outside synthetic subject `42`; and 413 for a request body over 64 KiB. The upstream
+server banner was absent, the documented security headers were present, and the other four public
+projects remained 200 for their judge UI, health, and readiness routes. This verification was
+non-mutating and does not claim a new workflow receipt.
 
 Local verification passed 51 tests at 90% coverage, Ruff, JavaScript syntax, diff whitespace, a
 clean wheel/source-archive build, and an isolated wheel install containing the API, abuse guard,
@@ -392,13 +402,13 @@ Automated tests prove:
 ## Current deployment and coordinator actions
 
 - The coordinator reports exact product commit
-  `c999d33e2b51485fa4abc84b46ce64d4e91e6b2a` deployed at
+  `d8a0e0ae8f6c79e71bba08cd3b0118b8cd37e48d` deployed at
   `https://forgetme.datahub-hackathon.aaronmathias.com`.
-- The credential-free public abuse-hardening successor is pending exact commit, push, independent
-  verification, and coordinator-owned promotion; the currently deployed product is unchanged.
+- The credential-free public abuse-hardening controls and proxy boundary are deployed and
+  coordinator-verified as described above.
 - Every workflow, readiness-transition, Lifeboat isolation, concurrency, and snapshot result
   recorded above remains attributed to backend commit
-  `8a24421f99622140bfa3e75c8db7ec3923f100de`. Deployment of `c999d33` is not represented as a new
+  `8a24421f99622140bfa3e75c8db7ec3923f100de`. Deployment of `d8a0e0a` is not represented as a new
   workflow receipt or recording.
 - The submission documentation successor is project HEAD after the documentation-only commit; it
   changes no product code, tests, dependencies, runtime configuration, generated evidence, or image

@@ -140,7 +140,7 @@ production security headers.
 
 ## Coordinator-verified live proof
 
-The exact public product is commit `c999d33e2b51485fa4abc84b46ce64d4e91e6b2a`, deployed at
+The exact public product is commit `d8a0e0ae8f6c79e71bba08cd3b0118b8cd37e48d`, deployed at
 [forgetme.datahub-hackathon.aaronmathias.com](https://forgetme.datahub-hackathon.aaronmathias.com).
 Its coordinator-owned workflow evidence was captured on backend commit
 `8a24421f99622140bfa3e75c8db7ec3923f100de`, which passed:
@@ -157,8 +157,11 @@ Public-safe hashes are in [live-evidence-summary.json](examples/live-evidence-su
 Coordinator provenance and exact operational commands remain in
 [COORDINATOR_HANDOFF.md](COORDINATOR_HANDOFF.md). Runtime receipts, selectors, credentials, and raw
 MCP responses are intentionally not committed. The current deployed descendant adds the judge
-console, selector-secret readiness hardening, and exact client pins; no new workflow receipt or
-screenshot is claimed for that documentation/release successor.
+console, selector-secret readiness hardening, exact client pins, fixed public selector scope,
+bounded admission, hidden non-local API documentation, and production security headers. Its
+signed-out guard verification is recorded in
+[COORDINATOR_HANDOFF.md](COORDINATOR_HANDOFF.md); no new workflow receipt or screenshot is claimed
+for that release successor.
 
 ## Repository map
 
