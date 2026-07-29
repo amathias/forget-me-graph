@@ -82,6 +82,14 @@ See [Privacy Boundary](docs/PRIVACY.md), [Defensible Claims](docs/CLAIMS.md), an
 
 ## Run locally
 
+### API documentation
+
+Local and test runs expose Swagger, ReDoc, and the generated OpenAPI document at `/docs`, `/redoc`,
+and `/openapi.json`. The unauthenticated public judge deployment disables those interactive routes
+to avoid turning a guided synthetic-data demonstration into a general mutation console. Nothing is
+closed-source: this repository, its API models, tests, and local OpenAPI output are the complete
+adoption and self-hosting reference.
+
 Requirements: Python 3.12+.
 
 ```powershell

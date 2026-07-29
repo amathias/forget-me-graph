@@ -30,6 +30,9 @@ def test_judge_console_serves_local_assets_and_exact_graph() -> None:
     assert page.status_code == stylesheet.status_code == script.status_code == 200
     assert "Forget-Me-Graph" in page.text
     assert "Evidence Console" in page.text
+    assert "PUBLIC DEMO" in page.text
+    assert "synthetic subject <code>42</code>" in page.text
+    assert "Never enter personal data" in page.text
     assert "approval-form" in page.text
     assert "external model access" in page.text.lower()
     assert "requestJson" in script.text
