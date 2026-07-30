@@ -8,9 +8,10 @@
 
 [Open the public application](https://forgetme.datahub-hackathon.aaronmathias.com) ·
 [View the public repository](https://github.com/amathias/forget-me-graph) ·
+[Watch the public demo](https://youtu.be/4bLytFlu-B8) ·
 [Follow the under-three-minute recording runbook](docs/DEMO_RECORDING.md)
 
-Demo video: **pending recording and public upload**. No video or screenshot is claimed yet.
+Demo video: **[public on YouTube](https://youtu.be/4bLytFlu-B8)** (2:19, English captions).
 
 A source deletion does not remove the same subject from derived tables, feature data, vector
 indexes, caches, exports, training snapshots, or learned artifacts. Forget-Me-Graph turns a scoped
@@ -189,12 +190,11 @@ for that release successor.
 - `demo/selector-mappings.json` — versioned selector propagation metadata
 - `examples/` — redacted non-runtime examples and coordinator-owned public hashes
 - `docs/DEMO_RECORDING.md` — under-three-minute recording runbook
-- `SUBMISSION.md` — Devpost-ready copy, public links, and truthful pending-video status
+- `SUBMISSION.md` — Devpost-ready copy and verified public links
 
 ## Submission facts
 
-- Category: **Open / Wildcard**, with **Production ML Agents** and **Agents That Do Real Work** as
-  secondary fits.
+- Primary category: **Open / Wildcard** (the only Devpost category selection).
 - License: [Apache 2.0](LICENSE).
 - Built during the hackathon submission period; no meaningful pre-existing product code is
   incorporated.

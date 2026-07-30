@@ -203,8 +203,7 @@ The repository now includes:
   repository map plus the actual public application and repository URLs;
 - `SUBMISSION.md` with Devpost-ready problem, solution, DataHub usage, technical proof,
   category fit, architecture, use case, adoption summary, challenges, accomplishments, testing
-  instructions, disclosures, actual app/repository URLs, and an explicit not-yet-published video
-  status;
+  instructions, disclosures, and actual app/repository/public-video URLs;
 - `docs/DEMO_RECORDING.md` with a 2:35–2:45 shot list, exact operator sequence and narration,
   preflight, and unchecked frame-level redaction review;
 - `docs/CLAIMS.md`, `docs/PRIVACY.md`, and `docs/LIMITATIONS.md` with evidence-bound claims and exact
@@ -429,10 +428,9 @@ Automated tests prove:
   asset.
 - This project did not access AWS, deploy, request a token, copy private receipts, or modify another
   workspace.
-- Record the public demo with `docs/DEMO_RECORDING.md`, perform its redaction review, publish the
-  under-three-minute video, add the verified video URL to Devpost, verify app/video availability
-  while signed out, and recheck the official Devpost rules/deadline. Do not replace the explicit
-  pending-video status in Git until a public recording actually exists.
+- The public 2:19 demo is available at <https://youtu.be/4bLytFlu-B8> with published English
+  captions. Add the verified video URL to Devpost, verify app/video availability while signed out,
+  and recheck the official Devpost rules/deadline.
 - The coordinator continues to own AWS, secrets, deployment, rollback, public availability,
   screenshots, live recording evidence, and final submission. No further product-code change is
   requested from this workspace.

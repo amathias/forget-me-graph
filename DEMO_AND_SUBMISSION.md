@@ -57,10 +57,9 @@ The authoritative recording target is **2:35–2:45**, with a **2:55 hard stop**
   write/reread before recording without exposing the out-of-band selector secret.
 - [ ] Capture redacted screenshots from the public HTTPS site and DataHub; do not commit private
   receipts or selectors.
-- [ ] Record the authoritative script under 2:45 and perform the redaction review.
-- [ ] Publish the video and verify it while signed out.
-- [ ] Add the verified public video URL to the Devpost entry; update the explicit pending-video
-  status in `SUBMISSION.md` only after the video actually exists.
+- [x] Record and publish an under-three-minute demo: <https://youtu.be/4bLytFlu-B8> (2:19).
+- [ ] Verify the public video while signed out.
+- [ ] Add the verified public video URL to the Devpost entry.
 - [ ] Confirm the public repository, Apache 2.0 detection, About metadata, and public app availability.
 - [ ] Recheck the official Devpost rules and deadline immediately before submission.
 
