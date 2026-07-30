@@ -2,12 +2,11 @@
 
 ## Current state
 
-The exact judge-facing product commit
-`c999d33e2b51485fa4abc84b46ce64d4e91e6b2a` is deployed at
-<https://forgetme.datahub-hackathon.aaronmathias.com>, and the public repository is
-<https://github.com/amathias/forget-me-graph>. The coordinator still owns deployment operations,
-live recording, video publication, screenshots, and the final Devpost submission. No recording or
-screenshot exists in the repository, and committed material must not imply otherwise.
+The judge-facing product is deployed at
+<https://forgetme.datahub-hackathon.aaronmathias.com>, the public repository is
+<https://github.com/amathias/forget-me-graph>, and the public captioned demo is
+<https://youtu.be/4bLytFlu-B8>. A public-safe judge-console screenshot is included in the
+repository. Runtime receipts, private responses, and credentials remain excluded.
 
 Authoritative artifacts:
 
@@ -51,14 +50,13 @@ The authoritative recording target is **2:35–2:45**, with a **2:55 hard stop**
 
 ## Final external checklist
 
-- [ ] Reconfirm the public application still serves exact product commit
-  `c999d33e2b51485fa4abc84b46ce64d4e91e6b2a`.
+- [ ] Reconfirm the public application, health endpoint, and readiness endpoint immediately before
+  submission.
 - [ ] Verify health, readiness, protected planning, approved live execution, downloads, and DataHub
   write/reread before recording without exposing the out-of-band selector secret.
-- [ ] Capture redacted screenshots from the public HTTPS site and DataHub; do not commit private
-  receipts or selectors.
+- [x] Capture a public-safe judge-console screenshot without private receipts or selectors.
 - [x] Record and publish an under-three-minute demo: <https://youtu.be/4bLytFlu-B8> (2:19).
-- [ ] Verify the public video while signed out.
+- [x] Verify the public video while signed out.
 - [ ] Add the verified public video URL to the Devpost entry.
 - [ ] Confirm the public repository, Apache 2.0 detection, About metadata, and public app availability.
 - [ ] Recheck the official Devpost rules and deadline immediately before submission.

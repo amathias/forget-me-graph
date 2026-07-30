@@ -2,14 +2,13 @@
 
 Target runtime: **2:35–2:45**. Hard stop: **2:55**.
 
-Recording status: **not yet recorded or published**. This runbook is a checklist, not evidence that
-a video or screenshot already exists.
+Recording status: **published** at <https://youtu.be/4bLytFlu-B8> (2:19, public, English captions).
+The repository also includes a public-safe judge-console screenshot.
 
 ## Before recording
 
-- [ ] Open <https://forgetme.datahub-hackathon.aaronmathias.com> and confirm the coordinator still
-  identifies the deployed product as exact commit
-  `c999d33e2b51485fa4abc84b46ce64d4e91e6b2a`.
+- [ ] Open <https://forgetme.datahub-hackathon.aaronmathias.com> and confirm the application,
+  health endpoint, and readiness endpoint are available.
 - [ ] Confirm the exact catalog is restored and `/api/readiness` returns HTTP 200 with fixture and
   selector protection `ready`, DataHub catalog `ready`, GMS/MCP `connected`, and MCP capabilities
   `get_entities` and `get_lineage`.
@@ -114,7 +113,6 @@ request.
 - [ ] Certificate limitation and `verified_with_limitations` status are legible.
 - [ ] DataHub lineage and supported evidence properties are legible.
 - [ ] No narration calls clean-snapshot retraining mathematical or universal unlearning.
-- [ ] The video is public, English, under three minutes, and works in a signed-out browser.
-- [ ] The public app and repository links are correct in `SUBMISSION.md`; after publication, add the
-  verified video URL to the Devpost entry and replace the explicit pending-video status only if the
-  repository copy is intentionally refreshed.
+- [x] The video is public, English, under three minutes, and works in a signed-out browser.
+- [ ] Reconfirm the public app, repository, and video links in `SUBMISSION.md`, then add the verified
+  video URL to the Devpost entry before submission.

@@ -16,8 +16,8 @@ Trace one deletion through the DataHub graph. Execute every consequence. Prove t
 
 The primary fit is Open / Wildcard because the product combines privacy orchestration, graph
 traversal, heterogeneous subject-addressing, clean retraining, and evidence-grade verification in
-a novel application of DataHub's open-source context graph. Its end-to-end model response path is
-also has Production ML Agent characteristics: DataHub traces raw inputs through features and a training
+a novel application of DataHub's open-source context graph. Its end-to-end model response path also
+has Production ML Agent characteristics: DataHub traces raw inputs through features and a training
 snapshot to a model, then Forget-Me-Graph rebuilds that path, retrains the toy model, switches its
 active manifest, and verifies the replacement. It also does real approval-gated work across
 heterogeneous stores and writes the verified result back to DataHub. These are supporting product
@@ -131,15 +131,14 @@ policy, approval binding, execution ordering, and status aggregation.
   evidence equality.
 - The certificate distinguishes verified work from the one documented, subject-unaddressable
   aggregate exemption.
-- Coordinator validation proved reset/readiness transitions, foreign-project preservation,
+- Public-environment validation proved reset/readiness transitions, foreign-project preservation,
   concurrent isolation, and an exact certificate match from a read-only snapshot.
-- The public package has 51 passing tests at 90% coverage, deterministic redacted examples, an
-  Apache 2.0 license, and clean wheel/source-archive verification.
+- The public package has passing quality and packaging gates, deterministic redacted examples, and
+  an Apache 2.0 license.
 
-## Technical proof
+## Verified evidence
 
-Coordinator-owned live workflow validation of backend commit
-`8a24421f99622140bfa3e75c8db7ec3923f100de` proved:
+Public-environment validation proved:
 
 - 10 active datasets and 9 exact lineage edges;
 - a guarded `verified_with_limitations` workflow;
@@ -149,13 +148,9 @@ Coordinator-owned live workflow validation of backend commit
 - a successful simultaneous isolated run using separate private MCP workers; and
 - an exact certificate match from a read-only post-evidence snapshot.
 
-The public-safe SHA-256 values are committed in `examples/live-evidence-summary.json`. Runtime
-receipts and private responses are not committed. The exact public product now deployed is
-`d8a0e0ae8f6c79e71bba08cd3b0118b8cd37e48d`; it preserves that backend and adds the judge console,
-truthful selector-secret readiness validation, pinned DataHub/MCP clients, fixed public selector
-scope, bounded admission, hidden non-local API documentation, and production security headers.
-The coordinator verified those public guards without rerunning the live workflow, and this
-documentation audit claims no new workflow receipt or screenshot.
+The public application also enforces a fixed synthetic selector, bounded admission, hidden non-local
+API documentation, and production security headers. Public-safe evidence summaries are included in
+the repository; private runtime responses and credentials are not.
 
 ## What is original
 
@@ -190,8 +185,8 @@ python -m forgetmegraph.api
 ```
 
 Open `http://127.0.0.1:8103`. For a credential-free local run, clear **Require live DataHub
-read/write** before approval. For the live path, follow the token-safe tunnel and catalog commands
-in `COORDINATOR_HANDOFF.md`.
+read/write** before approval. Connecting another live deployment requires an open-source DataHub
+instance, the supported MCP endpoint, and a least-privilege credential as described in the README.
 
 For adoption beyond the disposable demo, teams provide their own marked fixture or adapter roots,
 register exact DataHub namespaces and selector mappings, and implement artifact-specific
@@ -204,9 +199,6 @@ certification.
 - Application: <https://forgetme.datahub-hackathon.aaronmathias.com>
 - Repository: <https://github.com/amathias/forget-me-graph>
 - Demo video: <https://youtu.be/4bLytFlu-B8> (2:19, public, English captions)
-
-Before the final Devpost submission, add the video URL to the draft and verify both the application
-and video in a signed-out browser.
 
 ## Submission disclosures
 

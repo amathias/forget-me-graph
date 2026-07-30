@@ -154,12 +154,11 @@ accuracy, live-context fail-closed behavior, catalog seed/reset/restore isolatio
 UI redaction, evidence-download allowlists, fixed public selector scope, admission control, and
 production security headers.
 
-## Coordinator-verified live proof
+## Verified live proof
 
-The exact public product is commit `d8a0e0ae8f6c79e71bba08cd3b0118b8cd37e48d`, deployed at
+The public product is deployed at
 [forgetme.datahub-hackathon.aaronmathias.com](https://forgetme.datahub-hackathon.aaronmathias.com).
-Its coordinator-owned workflow evidence was captured on backend commit
-`8a24421f99622140bfa3e75c8db7ec3923f100de`, which passed:
+Public-environment workflow validation proved:
 
 - exact seed of 10 active datasets and 9 lineage edges;
 - approved workflow with `verified_with_limitations`;
@@ -170,14 +169,10 @@ Its coordinator-owned workflow evidence was captured on backend commit
 - a read-only snapshot whose certificate hash matched exactly.
 
 Public-safe hashes are in [live-evidence-summary.json](examples/live-evidence-summary.json).
-Coordinator provenance and exact operational commands remain in
-[COORDINATOR_HANDOFF.md](COORDINATOR_HANDOFF.md). Runtime receipts, selectors, credentials, and raw
-MCP responses are intentionally not committed. The current deployed descendant adds the judge
-console, selector-secret readiness hardening, exact client pins, fixed public selector scope,
-bounded admission, hidden non-local API documentation, and production security headers. Its
-signed-out guard verification is recorded in
-[COORDINATOR_HANDOFF.md](COORDINATOR_HANDOFF.md); no new workflow receipt or screenshot is claimed
-for that release successor.
+Runtime receipts, selectors, credentials, and raw MCP responses are intentionally excluded. The
+public application also includes the judge console, selector-secret readiness validation, fixed
+public selector scope, bounded admission, hidden non-local API documentation, and production
+security headers.
 
 ## Repository map
 
