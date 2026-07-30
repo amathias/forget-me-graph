@@ -10,15 +10,17 @@ Trace one deletion through the DataHub graph. Execute every consequence. Prove t
 
 ## Challenge
 
-**Primary:** Production ML Agents
+**Primary:** Open / Wildcard
 
-**Secondary fit:** Agents That Do Real Work
+**Secondary fit:** Production ML Agents and Agents That Do Real Work
 
-The primary fit is the end-to-end ML response path: DataHub traces raw inputs through features and
-a training snapshot to a model, then Forget-Me-Graph rebuilds that path, retrains the toy model,
-switches its active manifest, and verifies the replacement. The secondary fit is equally concrete:
-the application reads current DataHub context, performs approval-gated work across heterogeneous
-stores, and writes the verified result back to DataHub.
+The primary fit is Open / Wildcard because the product combines privacy orchestration, graph
+traversal, heterogeneous subject-addressing, clean retraining, and evidence-grade verification in
+a novel application of DataHub's open-source context graph. Its end-to-end model response path is
+also a concrete Production ML Agents fit: DataHub traces raw inputs through features and a training
+snapshot to a model, then Forget-Me-Graph rebuilds that path, retrains the toy model, switches its
+active manifest, and verifies the replacement. It also does real approval-gated work across
+heterogeneous stores and writes the verified result back to DataHub.
 
 ## Short description
 

@@ -1,5 +1,7 @@
 # Forget-Me-Graph
 
+[![CI](https://github.com/amathias/forget-me-graph/actions/workflows/ci.yml/badge.svg)](https://github.com/amathias/forget-me-graph/actions/workflows/ci.yml)
+
 ![Forget-Me-Graph — Trace. Execute. Verify.](docs/assets/forget-me-graph-social-card.png)
 
 **A DataHub-powered deletion and clean-retraining orchestrator with verifiable evidence.**
@@ -19,6 +21,11 @@ receipt-backed result to DataHub.
 The result is deliberately precise: the demo finishes as `verified_with_limitations` because one
 aggregate has no subject-addressable key. Clean-snapshot retraining is demonstrated; universal or
 mathematical machine unlearning is not claimed.
+
+![Forget-Me-Graph evidence certificate showing a verified result with explicit limitations](docs/assets/judge-console.png)
+
+_The certificate reports the strongest evidence-backed result—`verified with limitations`—and
+keeps the subject-unaddressable aggregate explicitly exempt._
 
 ## Architecture
 
@@ -186,7 +193,8 @@ for that release successor.
 
 ## Submission facts
 
-- Category: **Production ML Agents**, with **Agents That Do Real Work** as a secondary fit.
+- Category: **Open / Wildcard**, with **Production ML Agents** and **Agents That Do Real Work** as
+  secondary fits.
 - License: [Apache 2.0](LICENSE).
 - Built during the hackathon submission period; no meaningful pre-existing product code is
   incorporated.
