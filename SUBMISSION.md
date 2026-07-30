@@ -36,7 +36,7 @@ every result, and writes receipt-backed evidence through the supported DataHub P
 A privacy deletion in a system of record says nothing about its downstream copies: transformed
 tables, features, embeddings, caches, exports, training snapshots, and models. Data lineage can show
 the blast radius, but dataset-level edges cannot tell an executor how to find one subject. Deletion
-tools, meanwhile, rarely understand learned artifacts. We built the orchestration and evidence
+tools, meanwhile, rarely understand learned artifacts. I built the orchestration and evidence
 layer between those worlds.
 
 ## Use case and users
@@ -64,10 +64,10 @@ For a marked synthetic customer-support estate, Forget-Me-Graph:
    rereads them for exact equality.
 
 The honest result is `verified_with_limitations`: one aggregate has no subject-addressable key and
-is explicitly exempt. The model is fully retrained from a rebuilt clean snapshot. We do not claim
+is explicitly exempt. The model is fully retrained from a rebuilt clean snapshot. I do not claim
 mathematical or universal machine unlearning.
 
-## How we use DataHub
+## How I use DataHub
 
 - Open-source DataHub is the live catalog and dependency graph.
 - The DataHub MCP server supplies `get_entities` and downstream `get_lineage` context.
@@ -96,7 +96,7 @@ No LLM participates in the executable path. Dataset lineage determines impact sc
 selector mappings determine how a subject can be addressed at each descendant. Missing context,
 mapping, namespace markers, approval, or verification evidence blocks the relevant work.
 
-## How we built it
+## How I built it
 
 - Python 3.12, FastAPI, Pydantic
 - Open-source DataHub, DataHub MCP server, DataHub Python SDK
@@ -111,10 +111,10 @@ policy, approval binding, execution ordering, and status aggregation.
 
 ## Product-relevant challenges
 
-- **A successful metadata call can still mean “not found.”** We replaced configuration inference
+- **A successful metadata call can still mean “not found.”** I replaced configuration inference
   with exact, non-mutating readiness checks for the allocated domain, tag, ten active datasets,
   nine edges, MCP capabilities, and selector-protection contract.
-- **Dataset lineage is not row-level lineage.** We introduced explicit, versioned selector mappings
+- **Dataset lineage is not row-level lineage.** I introduced explicit, versioned selector mappings
   and fail closed instead of guessing how a subject key propagates.
 - **Model replacement is easy to overclaim.** The product verifies a rebuilt subject-free snapshot,
   retired manifest, and fully retrained toy model while explicitly declining to call that universal
@@ -164,11 +164,11 @@ visualization. It combines DataHub's graph with explicit row-key propagation, de
 selection, real heterogeneous adapters, approval binding, independent verification, and evidence
 writeback across conventional and learned artifacts.
 
-## What we learned
+## What I learned
 
 Successful metadata calls are not proof that an entity exists. DataHub can return an empty response
 for an absent or soft-deleted target, so readiness must verify the exact current allocation and
-lineage—not infer readiness from configuration or an old receipt. We also learned that honest
+lineage—not infer readiness from configuration or an old receipt. I also learned that honest
 machine-unlearning UX needs more than a green check: clean retraining, formal unlearning, exemption,
 failure, and out-of-scope are materially different outcomes.
 
