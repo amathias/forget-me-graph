@@ -2,7 +2,7 @@
 
 Target runtime: **2:35–2:45**. Hard stop: **2:55**.
 
-Recording status: **published** at <https://youtu.be/4bLytFlu-B8> (2:19, public, English captions).
+Recording status: **published** at <https://youtu.be/yJXGa730xQ0> (2:38, public, English captions).
 The repository also includes a public-safe judge-console screenshot.
 
 ## Before recording

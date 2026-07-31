@@ -5,7 +5,7 @@
 The judge-facing product is deployed at
 <https://forgetme.datahub-hackathon.aaronmathias.com>, the public repository is
 <https://github.com/amathias/forget-me-graph>, and the public captioned demo is
-<https://youtu.be/4bLytFlu-B8>. A public-safe judge-console screenshot is included in the
+<https://youtu.be/yJXGa730xQ0>. A public-safe judge-console screenshot is included in the
 repository. Runtime receipts, private responses, and credentials remain excluded.
 
 Authoritative artifacts:
@@ -55,7 +55,7 @@ The authoritative recording target is **2:35–2:45**, with a **2:55 hard stop**
 - [ ] Verify health, readiness, protected planning, approved live execution, downloads, and DataHub
   write/reread before recording without exposing the out-of-band selector secret.
 - [x] Capture a public-safe judge-console screenshot without private receipts or selectors.
-- [x] Record and publish an under-three-minute demo: <https://youtu.be/4bLytFlu-B8> (2:19).
+- [x] Record and publish an under-three-minute demo: <https://youtu.be/yJXGa730xQ0> (2:38).
 - [x] Verify the public video while signed out.
 - [ ] Add the verified public video URL to the Devpost entry.
 - [ ] Confirm the public repository, Apache 2.0 detection, About metadata, and public app availability.

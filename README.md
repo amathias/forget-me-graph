@@ -8,10 +8,10 @@
 
 [Open the public application](https://forgetme.datahub-hackathon.aaronmathias.com) ·
 [View the public repository](https://github.com/amathias/forget-me-graph) ·
-[Watch the public demo](https://youtu.be/4bLytFlu-B8) ·
+[Watch the public demo](https://youtu.be/yJXGa730xQ0) ·
 [Follow the under-three-minute recording runbook](docs/DEMO_RECORDING.md)
 
-Demo video: **[public on YouTube](https://youtu.be/4bLytFlu-B8)** (2:19, English captions).
+Demo video: **[public on YouTube](https://youtu.be/yJXGa730xQ0)** (2:38, English captions).
 
 A source deletion does not remove the same subject from derived tables, feature data, vector
 indexes, caches, exports, training snapshots, or learned artifacts. Forget-Me-Graph turns a scoped

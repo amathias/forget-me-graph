@@ -199,7 +199,7 @@ certification.
 
 - Application: <https://forgetme.datahub-hackathon.aaronmathias.com>
 - Repository: <https://github.com/amathias/forget-me-graph>
-- Demo video: <https://youtu.be/4bLytFlu-B8> (2:19, public, English captions)
+- Demo video: <https://youtu.be/yJXGa730xQ0> (2:38, public, English captions)
 
 ## Submission disclosures
 

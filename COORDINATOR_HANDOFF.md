@@ -428,7 +428,7 @@ Automated tests prove:
   asset.
 - This project did not access AWS, deploy, request a token, copy private receipts, or modify another
   workspace.
-- The public 2:19 demo is available at <https://youtu.be/4bLytFlu-B8> with published English
+- The public 2:38 demo is available at <https://youtu.be/yJXGa730xQ0> with published English
   captions. Add the verified video URL to Devpost, verify app/video availability while signed out,
   and recheck the official Devpost rules/deadline.
 - The coordinator continues to own AWS, secrets, deployment, rollback, public availability,
