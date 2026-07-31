@@ -10,8 +10,11 @@
   incomplete lineage, mapping gaps, or metadata drift fail closed.
 - Feature-table and model nodes use DataHub dataset URNs because the supported dataset-lineage API
   represents all nine edges consistently. Their executable types remain explicit custom metadata.
-- Evidence SHA-256 hashes are tamper-evident demo controls. They are not signatures, a trusted
-  timestamp, an append-only ledger, or legal-grade audit evidence.
+- Evidence SHA-256 hashes are tamper-evident demo controls. Certificate hashes cover a versioned,
+  canonical payload and can be recomputed with
+  `python -m forgetmegraph.verification.certificate <certificate.json>`; persisted certificates
+  are verified immediately after write. They are not signatures, a trusted timestamp, an
+  append-only ledger, or legal-grade audit evidence.
 - Local mode uses the checked-in executable graph and produces no DataHub read/write receipts.
   Live environments force current DataHub MCP context plus a supported write and immediate reread.
 - The web console is intentionally credential-free for judging. It restricts non-local execution

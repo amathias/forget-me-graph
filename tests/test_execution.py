@@ -17,7 +17,10 @@ from forgetmegraph.verification.certificate import (
     CertificateStatus,
     ItemStatus,
     verify_and_certify,
+    verify_certificate,
+    verify_certificate_file,
 )
+from forgetmegraph.verification.certificate import main as verify_certificate_main
 
 PROJECT_ROOT = Path(__file__).parents[1]
 CUSTOMERS = "urn:li:dataset:(urn:li:dataPlatform:duckdb,forgetme.raw.customers,PROD)"
@@ -111,8 +114,12 @@ def test_approved_workflow_purges_retrains_verifies_and_is_idempotent(tmp_path) 
     assert all(
         item.status in {ItemStatus.VERIFIED, ItemStatus.EXEMPT} for item in certificate.items
     )
-    assert (root / "evidence/req-execution-test/certificate.json").is_file()
+    certificate_path = root / "evidence/req-execution-test/certificate.json"
+    assert certificate_path.is_file()
     assert (root / "evidence/req-execution-test/certificate.md").is_file()
+    assert verify_certificate(certificate) is True
+    assert verify_certificate_file(certificate_path) == certificate
+    assert verify_certificate_main([str(certificate_path)]) == 0
 
     repeated = execute_plan(
         root=root,
@@ -124,6 +131,39 @@ def test_approved_workflow_purges_retrains_verifies_and_is_idempotent(tmp_path) 
         selector_secret=SECRET,
     )
     assert [item.receipt_id for item in repeated] == [item.receipt_id for item in receipts]
+
+
+def test_persisted_certificate_detects_tampering(tmp_path: Path) -> None:
+    root = tmp_path / "fixtures" / "forget-me-graph"
+    seed_estate(root, selector_secret=SECRET)
+    context, protector, selector, plan = _build_fixture_plan()
+    approval = Approval.grant(plan, approver="privacy-operator")
+    receipts = execute_plan(
+        root=root,
+        plan=plan,
+        approval=approval,
+        selector=selector,
+        protector=protector,
+        artifacts=context.artifacts(),
+        selector_secret=SECRET,
+    )
+    verify_and_certify(
+        root=root,
+        plan=plan,
+        selector=selector,
+        protector=protector,
+        artifacts=context.artifacts(),
+        receipts=receipts,
+        selector_secret=SECRET,
+    )
+    path = root / "evidence/req-execution-test/certificate.json"
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    payload["request_id"] = "req-tampered"
+    path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+
+    with pytest.raises(ValueError, match="hash verification failed"):
+        verify_certificate_file(path)
+    assert verify_certificate_main([str(path)]) == 1
 
 
 def test_certificate_refuses_complete_when_record_is_retained(tmp_path) -> None:

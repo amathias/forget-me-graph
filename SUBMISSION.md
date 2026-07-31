@@ -59,7 +59,8 @@ For a marked synthetic customer-support estate, Forget-Me-Graph:
 5. binds human approval to the exact plan SHA-256;
 6. mutates real disposable DuckDB, SQLite, CSV, vector, cache, snapshot, and scikit-learn artifacts;
 7. independently re-queries every addressable descendant;
-8. emits a tamper-evident JSON/Markdown certificate; and
+8. emits a JSON/Markdown certificate whose versioned canonical hash can be independently
+   recomputed with the repository verifier; and
 9. writes five allowlisted evidence properties to one allowlisted DataHub dataset, then immediately
    rereads them for exact equality.
 

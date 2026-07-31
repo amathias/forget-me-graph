@@ -1,10 +1,13 @@
 from __future__ import annotations
 
+import argparse
 import json
+import sys
 from collections.abc import Iterable
 from datetime import UTC, datetime
 from enum import StrEnum
 from hashlib import sha256
+from hmac import compare_digest
 from pathlib import Path
 
 from pydantic import BaseModel, ConfigDict
@@ -69,10 +72,52 @@ def _aggregate_status(items: list[CertificateItem]) -> CertificateStatus:
     return CertificateStatus.VERIFIED
 
 
-def _certificate_hash(payload: dict[str, object]) -> str:
-    return sha256(
-        json.dumps(payload, sort_keys=True, separators=(",", ":"), default=str).encode("utf-8")
-    ).hexdigest()
+def _canonical_datetime(value: datetime) -> str:
+    normalized = value.astimezone(UTC)
+    return normalized.isoformat(timespec="microseconds").replace("+00:00", "Z")
+
+
+def canonical_certificate_payload(certificate: EvidenceCertificate) -> bytes:
+    """Return the versioned bytes covered by ``certificate_hash``."""
+
+    payload = certificate.model_dump(mode="json", exclude={"certificate_hash"})
+    payload["generated_at"] = _canonical_datetime(certificate.generated_at)
+    envelope = {"hash_schema": "forgetme-certificate-v1", "certificate": payload}
+    return json.dumps(envelope, sort_keys=True, separators=(",", ":")).encode("utf-8")
+
+
+def compute_certificate_hash(certificate: EvidenceCertificate) -> str:
+    return sha256(canonical_certificate_payload(certificate)).hexdigest()
+
+
+def verify_certificate(certificate: EvidenceCertificate) -> bool:
+    """Recompute and compare the embedded certificate hash."""
+
+    return compare_digest(certificate.certificate_hash, compute_certificate_hash(certificate))
+
+
+def verify_certificate_file(path: Path) -> EvidenceCertificate:
+    """Load a persisted certificate and fail if its canonical hash does not match."""
+
+    certificate = EvidenceCertificate.model_validate_json(path.read_text(encoding="utf-8"))
+    if not verify_certificate(certificate):
+        raise ValueError("certificate hash verification failed")
+    return certificate
+
+
+def main(argv: list[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(
+        description="Verify a persisted Forget-Me-Graph evidence certificate."
+    )
+    parser.add_argument("certificate", type=Path)
+    args = parser.parse_args(argv)
+    try:
+        certificate = verify_certificate_file(args.certificate)
+    except (OSError, ValueError) as exc:
+        print(f"certificate_invalid: {exc}", file=sys.stderr)
+        return 1
+    print(f"certificate_verified sha256={certificate.certificate_hash}")
+    return 0
 
 
 def _write_markdown(path: Path, certificate: EvidenceCertificate) -> None:
@@ -167,22 +212,27 @@ def verify_and_certify(
             )
         )
     generated_at = datetime.now(UTC)
-    payload: dict[str, object] = {
-        "request_id": plan.request_id,
-        "selector_token": selector.token,
-        "plan_hash": plan.plan_hash,
-        "generated_at": generated_at.isoformat(),
-        "status": _aggregate_status(items).value,
-        "items": [item.model_dump(mode="json") for item in items],
-    }
-    certificate = EvidenceCertificate(
-        **payload,
-        certificate_hash=_certificate_hash(payload),
+    unhashed = EvidenceCertificate(
+        request_id=plan.request_id,
+        selector_token=selector.token,
+        plan_hash=plan.plan_hash,
+        generated_at=generated_at,
+        status=_aggregate_status(items),
+        items=items,
+        certificate_hash="0" * 64,
+    )
+    certificate = unhashed.model_copy(
+        update={"certificate_hash": compute_certificate_hash(unhashed)}
     )
     evidence_dir = root / "evidence" / plan.request_id
     evidence_dir.mkdir(parents=True, exist_ok=True)
     (evidence_dir / "certificate.json").write_text(
         certificate.model_dump_json(indent=2) + "\n", encoding="utf-8"
     )
+    verify_certificate_file(evidence_dir / "certificate.json")
     _write_markdown(evidence_dir / "certificate.md", certificate)
     return certificate
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

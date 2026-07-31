@@ -146,13 +146,14 @@ foreign, extra, partial, or empty target sets before emission.
 python -m ruff check src tests
 python -m pytest --cov=forgetmegraph --cov-report=term-missing -q
 node --check src/forgetmegraph/ui/app.js
+python -m forgetmegraph.verification.certificate path/to/certificate.json
 ```
 
 The test suite covers selector propagation, missing mappings, approval/plan binding, fixture and
 namespace guards, idempotency, real adapters, retained-record failures, retraining, certificate
 accuracy, live-context fail-closed behavior, catalog seed/reset/restore isolation, readiness drift,
-UI redaction, evidence-download allowlists, fixed public selector scope, admission control, and
-production security headers.
+UI redaction, evidence-download allowlists, fixed public selector scope, admission control,
+canonical certificate verification and tamper detection, and production security headers.
 
 ## Verified live proof
 

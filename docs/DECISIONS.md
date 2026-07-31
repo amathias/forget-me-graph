@@ -147,3 +147,14 @@ operator. They are deliberately process-local, reset on restart, and are not dis
 denial-of-service protection. Local/test workflows retain unrestricted synthetic selector coverage
 for development. Non-local API documentation is disabled and same-origin browser security headers
 are applied without introducing third-party services.
+
+## ADR-014: Certificate hashes use a versioned canonical payload
+
+**Status:** Accepted
+
+The certificate hash covers a canonical JSON envelope named `forgetme-certificate-v1`, excluding
+only the hash field itself. UTC timestamps use a fixed six-digit fractional representation ending
+in `Z`, keys are sorted, and separators are fixed. Certificate creation immediately verifies the
+persisted JSON file, while `python -m forgetmegraph.verification.certificate <certificate.json>`
+lets an independent reader recompute and compare the same hash. The hash detects modification; it
+is not a signature, identity proof, legal ledger, or claim that the evidence store is immutable.

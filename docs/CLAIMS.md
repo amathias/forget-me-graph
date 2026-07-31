@@ -11,7 +11,7 @@ Use this matrix in the UI, README, narration, and Devpost copy.
 | DataHub receives a supported writeback | The SDK patches five allowlisted custom properties on one allowlisted dataset, then rereads exact values | No lineage mutation or DataHub entity deletion occurs |
 | Reset is isolated | Exact soft reset touched ten project datasets while 102 foreign Lifeboat rows remained byte-for-byte identical | Coordinator-owned live evidence for the deployed backend |
 | Clean-snapshot retraining occurred | Old manifest retired; active model points to rebuilt subject-free snapshot and newly trained model | Not formal, universal, or mathematical unlearning |
-| Evidence is tamper-evident | Canonical and file SHA-256 values, write/reread receipt, immutable snapshot match | Hashes are not signatures or a legal ledger |
+| Evidence is tamper-evident | Versioned canonical certificate payload, persisted-file verifier, write/reread receipt, immutable snapshot match | Hashes are not signatures or a legal ledger |
 
 ## Never claim
 
