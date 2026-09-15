@@ -11,8 +11,20 @@ Remediation Batch 1 product commit `2b6547000abe03a4d7a2056676258dddafdb311c` wa
 reviewed and user-approved before publication. It binds read and execution receipts to the exact
 request and plan, strengthens fail-closed ordering and namespace checks, makes incomplete UI states
 visibly honest, and adopts plan-confirmation terminology. Verification passed with 66 tests at 91%
-coverage, 26 API/UI tests under an inherited `APP_ENV=hackathon`, Ruff, JavaScript syntax, CLI-help,
-wheel-build, and diff checks. It was not deployed because the functional runtime no longer exists.
+coverage, 26 focused API/UI tests, Ruff, JavaScript syntax, CLI-help, wheel-build, and diff checks.
+It was not deployed because the functional runtime no longer exists.
+
+Remediation Batch 2 product commit `0a07fee569b615fbb11dc22a36ecfa6629567068` validates and
+captures settings once at application creation, refuses incomplete non-local DataHub/selector
+configuration before serving, gives each app instance isolated admission state and services, and
+maps expected failures through typed errors rather than exception-message text. An independent
+review found no P0 or P1 issues and returned `ACCEPT WITH SMALL FIXES`. All five P2 corrections were
+applied before the user approved publication: deterministic test configuration, security headers
+on generic 500 responses, neutral policy wording, explicit 503 regression coverage, and consistent
+retired-runtime documentation. Verification passed with 80 tests at 91% coverage, an
+ambient-environment isolation reproduction, a direct `APP_ENV=hackathon` application smoke test,
+Ruff lint/format, JavaScript syntax, CLI help without `APP_ENV`, distribution build, and diff
+checks. It was not deployed because the functional runtime no longer exists.
 
 ## 2026-07-29 public-demo boundary closeout
 
@@ -50,14 +62,14 @@ not deploy, access EC2, request a token value, or modify another workspace.
 
 | Field | Current value |
 |---|---|
-| Status | Credential-free public abuse-hardening successor is deployed and coordinator-verified |
-| Milestone | Bound public judge execution without requiring an account or shared access token |
-| Current deployed product | `d8a0e0ae8f6c79e71bba08cd3b0118b8cd37e48d` at `https://forgetme.datahub-hackathon.aaronmathias.com` |
+| Status | Historical hackathon deployment was coordinator-verified; functional runtime retired September 10, 2026 |
+| Milestone | Bound public judge execution without requiring an account or shared access token during judging |
+| Historical deployed product | `d8a0e0ae8f6c79e71bba08cd3b0118b8cd37e48d`; the former hostname now serves a static post-hackathon display |
 | Prior deployed commits | `c999d33e2b51485fa4abc84b46ce64d4e91e6b2a`, `477604258142f460bc1946b56f9c685d3cd9e61b`, and `478b54128649d68c17454d7562290b30e6c2950e` |
 | Prior live findings | `4776042` failed closed on incomplete lineage; `478b541` exposed the absent/reset readiness false positive fixed by `8a24421` |
 | Judge UI code commit | `b9a33f3ac339cfdf26a448ec7c50d143da6721dd`; included in deployed product `d8a0e0a` |
 | Prior public candidate | `85828900cc0433bff9f3e0dc5032dcd3a0116c5c` (independently release-reviewed by the coordinator) |
-| Deployed abuse-hardening candidate | `d8a0e0ae8f6c79e71bba08cd3b0118b8cd37e48d` |
+| Historical deployed abuse-hardening candidate | `d8a0e0ae8f6c79e71bba08cd3b0118b8cd37e48d` |
 | Submission documentation HEAD | This documentation-only successor as reported by `git rev-parse HEAD`; no product-code or new live-evidence claim |
 | Build command | `python -m pip install -e ".[dev,datahub]"` |
 | Test command | `python -m ruff check src tests; python -m pytest --cov=forgetmegraph --cov-report=term-missing -q` |
@@ -138,11 +150,11 @@ Safety properties added for the UI path:
 
 Supply a minimum-16-character `FMG_SELECTOR_SECRET` through the coordinator's secret mechanism to
 every non-local app container. Do not echo it or place it in Git, container arguments, screenshots,
-or handoffs. With `APP_ENV` outside `local`/`test`, `/api/readiness` reports
-`selector_protection=missing_or_invalid` and returns 503 until the value satisfies the same
-contract enforced by planning. Readiness does not derive, hash, persist, log, or return the value.
-An absent local/test value uses the bundled disposable fallback; an explicitly invalid value never
-does. No port, catalog namespace, DataHub operation, or deployment topology changed.
+or handoffs. The Batch 2 candidate makes `hackathon` and `production` refuse startup until the
+secret and required DataHub settings satisfy their validation contracts. Readiness retains a
+defense-in-depth selector check but is not the primary configuration gate. An absent local/test
+value uses the bundled disposable fallback; an explicitly invalid value never does. No port,
+catalog namespace, DataHub operation, or deployment topology changed.
 
 Clean wheel and source-archive installations verified that `index.html`, `app.css`, and `app.js`
 are installed and that the `datahub` extra resolves exactly `acryl-datahub==1.6.0.15` and
@@ -402,10 +414,11 @@ of these current-state checks pass:
    downstream coverage from both raw entrypoints.
 
 The endpoint reports `datahub_catalog=missing_or_invalid` before seed, after soft reset, or on any
-metadata/lineage drift and `selector_protection=missing_or_invalid` for an absent or invalid
-non-local selector secret. It does not trust a prior receipt and performs no writes. It
-distinguishes selector-invalid, unconfigured, GMS-unreachable, catalog-invalid, and
-MCP-unreachable/incapable states without exposing exception text or secrets.
+metadata/lineage drift. In the Batch 2 candidate, absent or invalid non-local selector/DataHub
+configuration prevents application creation; the readiness selector check remains defense in
+depth. Readiness does not trust a prior receipt and performs no writes. It distinguishes
+unconfigured, GMS-unreachable, catalog-invalid, and MCP-unreachable/incapable states without
+exposing exception text or secrets.
 
 ## Isolation proof
 
@@ -419,8 +432,12 @@ Automated tests prove:
 - readiness is 503 before seed and after a verified ten-dataset reset, and returns to 200 only after
   exact seed/restore state plus full MCP coverage;
 - readiness rejects dataset-name/marker or exact-lineage drift and emits no metadata/status writes;
-- readiness rejects absent and short non-local selector secrets, accepts the minimum-valid length,
-  and preserves the absent local/test fallback with its DataHub probe independently controlled;
+- application creation rejects absent and short non-local selector secrets plus missing or invalid
+  DataHub settings, while preserving the absent local/test fallback;
+- separate app instances retain isolated settings, documentation routes, response headers,
+  injected services, and admission counters;
+- typed stale-plan, policy, and integration failures retain stable HTTP status mappings when their
+  messages change, while unexpected faults remain HTTP 500;
 - cross-namespace MCP assets and non-allowlisted evidence-write targets are rejected;
 - incomplete live entity context or lineage blocks execution before destructive adapters;
 - an unmarked nonempty local reset directory is refused and its sentinel survives;
@@ -428,13 +445,13 @@ Automated tests prove:
 - immutable approval hashes, destructive adapter allowlists, idempotency, retraining, independent
   verification, and certificate accuracy remain green.
 
-## Current deployment and coordinator actions
+## Historical deployment and current coordinator status
 
-- The coordinator reports exact product commit
-  `d8a0e0ae8f6c79e71bba08cd3b0118b8cd37e48d` deployed at
-  `https://forgetme.datahub-hackathon.aaronmathias.com`.
-- The credential-free public abuse-hardening controls and proxy boundary are deployed and
-  coordinator-verified as described above.
+- During judging, the coordinator deployed exact product commit
+  `d8a0e0ae8f6c79e71bba08cd3b0118b8cd37e48d` at the public hostname and verified the
+  credential-free abuse controls plus proxy boundary described above.
+- The functional EC2/DataHub runtime was retired on September 10, 2026. The hostname now serves a
+  static post-hackathon demo display and does not claim live workflow execution.
 - Every workflow, readiness-transition, Lifeboat isolation, concurrency, and snapshot result
   recorded above remains attributed to backend commit
   `8a24421f99622140bfa3e75c8db7ec3923f100de`. Deployment of `d8a0e0a` is not represented as a new
