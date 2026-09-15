@@ -1,5 +1,19 @@
 # Coordinator Handoff: Forget-Me-Graph
 
+## 2026-09-14 post-hackathon source-maintenance status
+
+The paid EC2/DataHub runtime was retired on September 10, 2026. The original public hostname now
+serves a static demo display, so subsequent source-maintenance batches have no functional public
+deployment target unless infrastructure is explicitly recreated. The accepted public demo is
+<https://youtu.be/8X5DlDZyb4A>; historical live evidence below remains unchanged.
+
+Remediation Batch 1 product commit `2b6547000abe03a4d7a2056676258dddafdb311c` was independently
+reviewed and user-approved before publication. It binds read and execution receipts to the exact
+request and plan, strengthens fail-closed ordering and namespace checks, makes incomplete UI states
+visibly honest, and adopts plan-confirmation terminology. Verification passed with 66 tests at 91%
+coverage, 26 API/UI tests under an inherited `APP_ENV=hackathon`, Ruff, JavaScript syntax, CLI-help,
+wheel-build, and diff checks. It was not deployed because the functional runtime no longer exists.
+
 ## 2026-07-29 public-demo boundary closeout
 
 | Field | Verified value |
@@ -201,6 +215,8 @@ The repository now includes:
 
 - a judge-oriented README with exact local/live commands, safety boundaries, DataHub proof, and
   repository map plus the actual public application and repository URLs;
+- `DEVPOST_PROJECT_DETAILS.md` with the saved Step 3 story, normalized tags, public links, ordered
+  two-image gallery captions, and accepted final video; the Devpost submission is complete;
 - `SUBMISSION.md` with Devpost-ready problem, solution, DataHub usage, technical proof,
   category fit, architecture, use case, adoption summary, challenges, accomplishments, testing
   instructions, disclosures, and actual app/repository/public-video URLs;
@@ -428,9 +444,8 @@ Automated tests prove:
   asset.
 - This project did not access AWS, deploy, request a token, copy private receipts, or modify another
   workspace.
-- The public 2:38 demo is available at <https://youtu.be/yJXGa730xQ0> with published English
-  captions. Add the verified video URL to Devpost, verify app/video availability while signed out,
-  and recheck the official Devpost rules/deadline.
+- The public 2:38 demo is available at <https://youtu.be/8X5DlDZyb4A> with published English
+  captions and is embedded in the completed Devpost submission.
 - The coordinator continues to own AWS, secrets, deployment, rollback, public availability,
   screenshots, live recording evidence, and final submission. No further product-code change is
   requested from this workspace.
