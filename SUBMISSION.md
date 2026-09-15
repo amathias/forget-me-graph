@@ -1,5 +1,12 @@
 # Devpost Submission Package
 
+> Exact Devpost Step 3 story, tags, links, media, and video:
+> [`DEVPOST_PROJECT_DETAILS.md`](DEVPOST_PROJECT_DETAILS.md).
+
+> **Post-hackathon note:** This is the historical submission package. The paid live judging
+> environment was retired on September 10, 2026; the application URL now serves a static demo
+> display, while the source remains runnable locally.
+
 ## Title
 
 Forget-Me-Graph
@@ -19,7 +26,7 @@ traversal, heterogeneous subject-addressing, clean retraining, and evidence-grad
 a novel application of DataHub's open-source context graph. Its end-to-end model response path also
 has Production ML Agent characteristics: DataHub traces raw inputs through features and a training
 snapshot to a model, then Forget-Me-Graph rebuilds that path, retrains the toy model, switches its
-active manifest, and verifies the replacement. It also does real approval-gated work across
+active manifest, and verifies the replacement. It also does real plan-confirmation-gated work across
 heterogeneous stores and writes the verified result back to DataHub. These are supporting product
 characteristics, not additional category selections.
 
@@ -27,7 +34,7 @@ characteristics, not additional category selections.
 
 Forget-Me-Graph is a DataHub-powered deletion and clean-retraining orchestrator. It reads live
 entity and downstream-lineage context through the DataHub MCP server, propagates a protected
-subject selector through explicit mappings, requires approval for a deterministic action-plan
+subject selector through explicit mappings, requires operator confirmation of a deterministic action-plan
 hash, executes real purge/rebuild/vector/cache/export/retraining adapters, independently verifies
 every result, and writes receipt-backed evidence through the supported DataHub Python SDK.
 
@@ -44,7 +51,7 @@ layer between those worlds.
 The demo represents a privacy operator working with data-platform and ML-platform teams. A single
 synthetic subject request must be handled across operational data, derived tables, feature data,
 embeddings, caches, exports, a training snapshot, and a learned artifact. The output is not a vague
-“done” message: it is an exact plan, an approval record, independently checked results, explicit
+“done” message: it is an exact plan, a plan-confirmation record, independently checked results, explicit
 limitations, and a downloadable evidence certificate.
 
 ## What it does
@@ -56,7 +63,7 @@ For a marked synthetic customer-support estate, Forget-Me-Graph:
 3. uses versioned key mappings to translate dataset lineage into executable selectors;
 4. deterministically selects purge, rebuild, vector deletion/re-index, cache eviction, export
    replacement, clean-snapshot retraining, verification, or exemption;
-5. binds human approval to the exact plan SHA-256;
+5. binds explicit operator confirmation to the exact plan SHA-256;
 6. mutates real disposable DuckDB, SQLite, CSV, vector, cache, snapshot, and scikit-learn artifacts;
 7. independently re-queries every addressable descendant;
 8. emits a JSON/Markdown certificate whose versioned canonical hash can be independently
@@ -87,7 +94,7 @@ Same-origin evidence console
   -> privacy boundary and protected selector
   -> live DataHub MCP/GMS context gate
   -> explicit selector mappings + deterministic policy
-  -> approval bound to the exact plan SHA-256
+  -> operator confirmation bound to the exact plan SHA-256
   -> allowlisted purge/rebuild/retrain adapters
   -> independent verifier + JSON/Markdown certificate
   -> supported DataHub SDK write + immediate reread
@@ -95,7 +102,7 @@ Same-origin evidence console
 
 No LLM participates in the executable path. Dataset lineage determines impact scope; versioned
 selector mappings determine how a subject can be addressed at each descendant. Missing context,
-mapping, namespace markers, approval, or verification evidence blocks the relevant work.
+mapping, namespace markers, plan confirmation, or verification evidence blocks the relevant work.
 
 ## How I built it
 
@@ -108,7 +115,7 @@ mapping, namespace markers, approval, or verification evidence blocks the releva
 
 Keeping the UI same-origin removes a separate credential boundary and lets the console call the
 exact planner/executor/verifier used by the CLI. Deterministic code—not an LLM—controls traversal,
-policy, approval binding, execution ordering, and status aggregation.
+policy, plan-confirmation binding, execution ordering, and status aggregation.
 
 ## Product-relevant challenges
 
@@ -126,7 +133,7 @@ policy, approval binding, execution ordering, and status aggregation.
 
 ## Accomplishments
 
-- One approval-gated workflow spans real DuckDB, SQLite, vector, cache, CSV, snapshot, and
+- One plan-confirmation-gated workflow spans real DuckDB, SQLite, vector, cache, CSV, snapshot, and
   scikit-learn adapters.
 - Current DataHub context gates execution, and a supported SDK patch is immediately reread for exact
   evidence equality.
@@ -157,7 +164,7 @@ the repository; private runtime responses and credentials are not.
 
 Forget-Me-Graph is not another privacy request dashboard and does not stop at lineage
 visualization. It combines DataHub's graph with explicit row-key propagation, deterministic action
-selection, real heterogeneous adapters, approval binding, independent verification, and evidence
+selection, real heterogeneous adapters, plan-confirmation binding, independent verification, and evidence
 writeback across conventional and learned artifacts.
 
 ## What I learned
@@ -170,23 +177,23 @@ failure, and out-of-scope are materially different outcomes.
 
 ## Testing instructions
 
-Try the public synthetic-data application at
-<https://forgetme.datahub-hackathon.aaronmathias.com>. Use synthetic selector `42`, keep it masked,
-and review the readiness, plan hash, aggregate limitation, and approval controls before executing.
-No account or access token is required. To keep this unauthenticated demo available for every
-judge, the service accepts only that one synthetic subject, rejects concurrent execution, and may
-return `429` with a short `Retry-After` delay when its transparent plan/run limits are reached.
+During judging, the public synthetic-data application at
+<https://forgetme.datahub-hackathon.aaronmathias.com> accepted synthetic selector `42` without an
+account or access token. It enforced that fixed subject, rejected concurrent execution, and used
+transparent plan/run limits. After the paid runtime was retired, the same URL became a static demo
+display. Use the local instructions below to run the working application.
 
 For a clean local evaluation:
 
 ```powershell
 python -m pip install -e ".[dev,datahub]"
+$env:APP_ENV = 'local'
 python -m forgetmegraph.demo.seed seed
 python -m forgetmegraph.api
 ```
 
 Open `http://127.0.0.1:8103`. For a credential-free local run, clear **Require live DataHub
-read/write** before approval. Connecting another live deployment requires an open-source DataHub
+read/write** before confirmation. Connecting another live deployment requires an open-source DataHub
 instance, the supported MCP endpoint, and a least-privilege credential as described in the README.
 
 For adoption beyond the disposable demo, teams provide their own marked fixture or adapter roots,
@@ -197,9 +204,9 @@ certification.
 
 ## Public links
 
-- Application: <https://forgetme.datahub-hackathon.aaronmathias.com>
+- Post-hackathon demo display: <https://forgetme.datahub-hackathon.aaronmathias.com>
 - Repository: <https://github.com/amathias/forget-me-graph>
-- Demo video: <https://youtu.be/yJXGa730xQ0> (2:38, public, English captions)
+- Demo video: <https://youtu.be/8X5DlDZyb4A> (2:38, public, English captions)
 
 ## Submission disclosures
 

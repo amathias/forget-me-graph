@@ -19,7 +19,11 @@ from forgetmegraph.domain.models import (
     DecisionStatus,
     ProtectedSelector,
 )
-from forgetmegraph.execution.models import ExecutionReceipt, ReceiptStatus
+from forgetmegraph.execution.models import (
+    ExecutionReceipt,
+    ReceiptStatus,
+    execution_idempotency_key,
+)
 from forgetmegraph.execution.safety import require_fixture_marker
 from forgetmegraph.privacy.selector import SelectorProtector
 
@@ -60,6 +64,7 @@ class EvidenceCertificate(BaseModel):
     generated_at: datetime
     status: CertificateStatus
     items: list[CertificateItem]
+    datahub_read_receipt_sha256: str | None = None
     certificate_hash: str
 
 
@@ -81,8 +86,15 @@ def canonical_certificate_payload(certificate: EvidenceCertificate) -> bytes:
     """Return the versioned bytes covered by ``certificate_hash``."""
 
     payload = certificate.model_dump(mode="json", exclude={"certificate_hash"})
+    if certificate.datahub_read_receipt_sha256 is None:
+        payload.pop("datahub_read_receipt_sha256", None)
     payload["generated_at"] = _canonical_datetime(certificate.generated_at)
-    envelope = {"hash_schema": "forgetme-certificate-v1", "certificate": payload}
+    hash_schema = (
+        "forgetme-certificate-v2"
+        if certificate.datahub_read_receipt_sha256 is not None
+        else "forgetme-certificate-v1"
+    )
+    envelope = {"hash_schema": hash_schema, "certificate": payload}
     return json.dumps(envelope, sort_keys=True, separators=(",", ":")).encode("utf-8")
 
 
@@ -97,11 +109,22 @@ def verify_certificate(certificate: EvidenceCertificate) -> bool:
 
 
 def verify_certificate_file(path: Path) -> EvidenceCertificate:
-    """Load a persisted certificate and fail if its canonical hash does not match."""
+    """Verify a certificate and any adjacent DataHub read receipt it references."""
 
     certificate = EvidenceCertificate.model_validate_json(path.read_text(encoding="utf-8"))
     if not verify_certificate(certificate):
         raise ValueError("certificate hash verification failed")
+    if certificate.datahub_read_receipt_sha256 is not None:
+        from forgetmegraph.context.datahub import DataHubReadReceipt
+
+        receipt_path = path.with_name("datahub-read-receipt.json")
+        receipt = DataHubReadReceipt.model_validate_json(receipt_path.read_text(encoding="utf-8"))
+        if not receipt.verifies_binding(
+            request_id=certificate.request_id,
+            plan_hash=certificate.plan_hash,
+            receipt_sha256=certificate.datahub_read_receipt_sha256,
+        ):
+            raise ValueError("DataHub read receipt binding verification failed")
     return certificate
 
 
@@ -133,6 +156,11 @@ def _write_markdown(path: Path, certificate: EvidenceCertificate) -> None:
         "| Artifact | Action | Before | After | Status | Limitation |",
         "|---|---|---:|---:|---|---|",
     ]
+    if certificate.datahub_read_receipt_sha256 is not None:
+        lines.insert(
+            7,
+            f"- DataHub read receipt hash: `{certificate.datahub_read_receipt_sha256}`",
+        )
     for item in certificate.items:
         before = "—" if item.before_count is None else str(item.before_count)
         after = "—" if item.after_count is None else str(item.after_count)
@@ -161,13 +189,29 @@ def verify_and_certify(
     artifacts: Iterable[Artifact],
     receipts: Iterable[ExecutionReceipt],
     selector_secret: str,
+    datahub_read_receipt_sha256: str | None = None,
 ) -> EvidenceCertificate:
     root = require_fixture_marker(root)
     revealed = protector.reveal(selector)
     customer_id = int(revealed.value)
     presence = inspect_presence(root, customer_id=customer_id, selector_secret=selector_secret)
     artifact_by_urn = {artifact.urn: artifact for artifact in artifacts}
-    receipt_by_urn = {receipt.target_urn: receipt for receipt in receipts}
+    expected_receipt_keys = {
+        (decision.target_urn, decision.action): execution_idempotency_key(
+            plan_hash=plan.plan_hash,
+            target_urn=decision.target_urn,
+            action=decision.action,
+        )
+        for decision in plan.decisions
+        if decision.status is DecisionStatus.READY
+    }
+    receipt_by_urn = {
+        receipt.target_urn: receipt
+        for receipt in receipts
+        if receipt.request_id == plan.request_id
+        and receipt.idempotency_key
+        == expected_receipt_keys.get((receipt.target_urn, receipt.action))
+    }
     items: list[CertificateItem] = []
     for decision in plan.decisions:
         artifact = artifact_by_urn[decision.target_urn]
@@ -219,6 +263,7 @@ def verify_and_certify(
         generated_at=generated_at,
         status=_aggregate_status(items),
         items=items,
+        datahub_read_receipt_sha256=datahub_read_receipt_sha256,
         certificate_hash="0" * 64,
     )
     certificate = unhashed.model_copy(

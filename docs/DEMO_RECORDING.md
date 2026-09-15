@@ -2,8 +2,12 @@
 
 Target runtime: **2:35–2:45**. Hard stop: **2:55**.
 
-Recording status: **published** at <https://youtu.be/yJXGa730xQ0> (2:38, public, English captions).
+Recording status: **published** at <https://youtu.be/8X5DlDZyb4A> (2:38, public, English captions).
 The repository also includes a public-safe judge-console screenshot.
+
+> Post-recording terminology note: the current source calls the unauthenticated demo interlock
+> **plan confirmation**. The published recording's use of “approval” refers to that same
+> self-asserted operator confirmation, not authenticated authorization or enterprise IAM.
 
 ## Before recording
 
@@ -20,8 +24,8 @@ The repository also includes a public-safe judge-console screenshot.
 - [ ] Prepare DataHub in a second tab at the allowlisted customers dataset, with the visible
    `forgetme.*` evidence properties and lineage graph. Do not expose authorization headers, raw MCP
    responses, selectors, or private receipts.
-- [ ] Leave approver `demo-privacy-operator`, **Reset synthetic fixture first**, and **Require live
-  DataHub read/write** selected.
+- [ ] Leave the self-asserted operator label `demo-privacy-operator`, **Reset synthetic fixture
+  first**, and **Require live DataHub read/write** selected.
 - [ ] Record without copyrighted music, unrelated third-party marks, or personal notifications.
 
 ## Exact operator sequence
@@ -30,9 +34,9 @@ The repository also includes a public-safe judge-console screenshot.
 2. Scroll to Request and submit the already-masked synthetic selector.
 3. Pause on the protected token, plan SHA-256, ten-node graph, and versioned mapping explanation.
 4. Scroll through the action table and point out the aggregate exemption.
-5. Select the approval checkbox and execute with both safety checkboxes still selected. If the
-   public service reports a transparent `429` capacity delay, wait for the displayed `Retry-After`
-   interval and retry once; do not repeatedly submit.
+5. Select the plan-confirmation checkbox and execute with both safety checkboxes still selected. If
+   the public service reports a transparent `429` capacity delay, wait for the displayed
+   `Retry-After` interval and retry once; do not repeatedly submit.
 6. Keep the execution timeline visible until verification and write/reread complete.
 7. Show the verification matrix, `verified_with_limitations`, and certificate download buttons.
 8. Switch to the prepared DataHub tab and show only the lineage plus allowlisted `forgetme.*`
@@ -65,16 +69,16 @@ request.
 > edges. Dataset lineage defines scope; versioned selector mappings explain how the subject can be
 > addressed downstream. Any gap fails closed.
 
-### 1:02–1:25 — Honest action plan and approval
+### 1:02–1:25 — Honest action plan and confirmation
 
-**Screen:** Action table, plan hash, aggregate exemption, approval card.
+**Screen:** Action table, plan hash, aggregate exemption, confirmation card.
 
 > Rules select row purge, rebuild, vector deletion, cache eviction, export replacement, and clean
 > retraining. This aggregate has no subject key, so it is exempt instead of being falsely marked
 > deleted. Approval binds to this exact SHA-256 plan.
 
-**Action:** Check the approval box and execute with both **Reset synthetic fixture first** and
-**Require live DataHub read/write** still selected.
+**Action:** Check the plan-confirmation box and execute with both **Reset synthetic fixture first**
+and **Require live DataHub read/write** still selected.
 
 ### 1:25–2:00 — Real execution
 

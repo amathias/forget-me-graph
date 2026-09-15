@@ -8,7 +8,7 @@
     "token": "<redacted-protected-token>",
     "raw_value_persisted": false
   },
-  "policy_basis": "Approved synthetic privacy-request demonstration",
-  "approval_required": true,
+  "policy_basis": "Confirmed synthetic privacy-request demonstration",
+  "confirmation_required": true,
   "notice": "The raw synthetic selector is intentionally omitted."
 }

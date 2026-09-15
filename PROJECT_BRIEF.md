@@ -38,7 +38,7 @@ Ingest the assets and lineage into DataHub. Store explicit key-propagation mappi
 3. Agent reads DataHub lineage, schemas, ownership, and ML metadata.
 4. Selector engine propagates the subject key through explicit mappings.
 5. Policy engine chooses purge, rebuild, retrain, optional unlearn, verify-only, exempt, or escalate.
-6. User reviews the plan and approves destructive work.
+6. User reviews and explicitly confirms the exact plan before destructive work.
 7. Executors mutate the local tables, index, cache, export, and toy model.
 8. Verifier reruns subject queries, manifest checks, and model lineage checks.
 9. Certificate generator reports verified, failed, blocked, exempt, and out-of-scope results.
@@ -51,7 +51,7 @@ Ingest the assets and lineage into DataHub. Store explicit key-propagation mappi
 - Accept a request ID, subject type, scoped selector, legal/policy basis supplied by the fixture, deadline, and requester.
 - Minimize subject data in logs and never send raw records to the LLM.
 - Support deterministic pseudonymization for the demo.
-- Record approval and action history.
+- Record plan-confirmation and action history.
 
 ### Graph and selector propagation
 
@@ -93,7 +93,7 @@ Privacy request UI
       -> DataHub context and ML-lineage adapter
       -> selector-propagation engine
       -> deterministic action policy
-      -> approval gate
+      -> plan-confirmation gate
       -> deletion/rebuild/retrain adapters
       -> verification engine
       -> certificate generator
@@ -117,7 +117,7 @@ Suggested stack:
 - subject type and pseudonymous selector
 - scope and policy basis
 - deadline
-- requester and approver
+- requester and confirming operator label
 - request state
 
 ### Selector mapping
@@ -149,7 +149,8 @@ Suggested stack:
 
 ## Safety and truthfulness
 
-- Destructive actions require explicit approval.
+- Destructive actions require explicit confirmation of the exact plan hash. The demo confirmation
+  is not authenticated authorization or enterprise IAM.
 - Run only against synthetic, disposable demo data.
 - Fail closed on missing selector mappings or incomplete lineage.
 - Never expose raw subject data to an external model.
@@ -163,7 +164,7 @@ Suggested stack:
 - DataHub graph containing data and ML lineage.
 - Explicit selector mappings.
 - Real purge, vector deletion, cache eviction, export rebuild, and toy retraining.
-- Approval and resumable execution.
+- Plan confirmation and resumable execution.
 - Verification and evidence certificate.
 - Real supported DataHub writeback.
 - Automated tests.
@@ -189,7 +190,7 @@ Suggested stack:
 - [ ] The expected downstream graph is discovered from DataHub.
 - [ ] Selector mappings produce correct target queries.
 - [ ] A missing mapping blocks execution for that branch.
-- [ ] Approval is enforced.
+- [ ] Plan confirmation is enforced.
 - [ ] SQL, vector, cache, export, and toy-model paths actually run.
 - [ ] Verification detects a deliberately retained record.
 - [ ] The active model manifest references clean training data after retraining.

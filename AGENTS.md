@@ -22,7 +22,8 @@ Before modifying code, read these files completely:
 - Execute real purge, rebuild, and toy-model retraining paths; treat specialized unlearning algorithms as optional adapters unless genuinely implemented.
 - Verify absence or replacement at every in-scope descendant.
 - Produce a certificate that distinguishes verified, failed, blocked, and out-of-scope artifacts.
-- Require approval for destructive actions.
+- Require explicit operator confirmation of the exact plan hash before destructive actions. This
+  demo confirmation is not authenticated authorization or enterprise IAM.
 
 ## Engineering principles
 
@@ -61,7 +62,7 @@ Before modifying code, read these files completely:
 
 ## Definition of done
 
-A reviewer can submit the demo deletion request, inspect affected assets, approve the plan, watch real local tables and vector records be purged and a toy model retrained, rerun verification, see DataHub updates, and download a truthful evidence certificate.
+A reviewer can submit the demo deletion request, inspect affected assets, confirm the plan, watch real local tables and vector records be purged and a toy model retrained, rerun verification, see DataHub updates, and download a truthful evidence certificate.
 
 ## Submission guardrails
 

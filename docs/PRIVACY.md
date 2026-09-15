@@ -22,7 +22,7 @@ verification, and certificate aggregation are deterministic application code.
 - Intake selector fields are `repr=False`; Pydantic validation failures return a generic message
   rather than echoing rejected request content.
 - The browser clears the visible selector field after planning and retains the value only in the
-  current page's memory until approved execution. It never uses local storage, session storage,
+  current page's memory until confirmed execution. It never uses local storage, session storage,
   analytics, or console logging.
 - `SelectorProtector` creates an HMAC display token and encrypted adapter value. The ciphertext is
   excluded from model serialization and is not written to plans or certificates.

@@ -1,5 +1,6 @@
 import asyncio
 import json
+import sys
 from datetime import UTC, datetime
 from hashlib import sha256
 from importlib.util import find_spec
@@ -13,14 +14,19 @@ from forgetmegraph.context.datahub import (
     DataHubMcpReader,
     DataHubReadReceipt,
     DataHubWriteReceipt,
+    require_namespaced_urns,
     write_evidence_properties,
 )
-from forgetmegraph.demo import workflow
+from forgetmegraph.context.namespace import parse_dataset_urn
+from forgetmegraph.demo import datahub_catalog, workflow
 from forgetmegraph.demo.seed import inspect_presence, seed_estate
 from forgetmegraph.domain.models import ActionPlan
+from forgetmegraph.execution.safety import SafetyViolation
 from forgetmegraph.verification.certificate import (
     CertificateStatus,
     EvidenceCertificate,
+    canonical_certificate_payload,
+    verify_certificate_file,
 )
 
 CUSTOMERS = "urn:li:dataset:(urn:li:dataPlatform:duckdb,forgetme.raw.customers,PROD)"
@@ -98,6 +104,54 @@ def test_mcp_read_rejects_cross_namespace_asset() -> None:
                 expected_urns=[CUSTOMERS],
             )
         )
+
+
+def test_mcp_read_rejects_unplanned_in_namespace_entity() -> None:
+    extra = "urn:li:dataset:(urn:li:dataPlatform:duckdb,forgetme.raw.copy,PROD)"
+    reader = DataHubMcpReader(
+        namespace_prefix="forgetme.",
+        client=FakeMcpClient([CUSTOMERS], extra_entity_urn=extra),
+    )
+
+    with pytest.raises(DataHubIntegrationError, match="unplanned assets"):
+        asyncio.run(
+            reader.read_context(
+                entrypoint_urns=[CUSTOMERS],
+                expected_urns=[CUSTOMERS],
+            )
+        )
+
+
+def test_mcp_read_rejects_unplanned_in_namespace_lineage_descendant() -> None:
+    extra = "urn:li:dataset:(urn:li:dataPlatform:duckdb,forgetme.analytics.copy,PROD)"
+    reader = DataHubMcpReader(
+        namespace_prefix="forgetme.",
+        client=FakeMcpClient([CUSTOMERS], lineage_urns=[CUSTOMERS, extra]),
+    )
+
+    with pytest.raises(DataHubIntegrationError, match="lineage contains unplanned assets"):
+        asyncio.run(
+            reader.read_context(
+                entrypoint_urns=[CUSTOMERS],
+                expected_urns=[CUSTOMERS],
+            )
+        )
+
+
+def test_namespace_validation_rejects_embedded_prefix_and_malformed_urns() -> None:
+    embedded = "urn:li:dataset:(urn:li:dataPlatform:forgetme.duckdb,other.raw.data,PROD)"
+    malformed = "urn:li:dataset:forgetme.raw.customers"
+
+    for urn in (embedded, malformed):
+        with pytest.raises(DataHubIntegrationError):
+            require_namespaced_urns([urn], "forgetme.")
+
+    parsed = parse_dataset_urn(CUSTOMERS)
+    assert parsed.name == "forgetme.raw.customers"
+
+    bare_prefix = "urn:li:dataset:(urn:li:dataPlatform:duckdb,forgetme.,PROD)"
+    with pytest.raises(DataHubIntegrationError):
+        require_namespaced_urns([bare_prefix], "forgetme.")
 
 
 def test_mcp_read_fails_closed_when_lineage_is_incomplete() -> None:
@@ -250,7 +304,7 @@ def test_live_workflow_persists_read_and_verified_write_receipts(monkeypatch, tm
     certificate = workflow.run_workflow(
         root=root,
         project_root=Path(__file__).parents[1],
-        approver="privacy-operator",
+        confirmed_by="privacy-operator",
         request_id="req-live-workflow-test",
         seed=True,
         require_datahub=True,
@@ -260,10 +314,151 @@ def test_live_workflow_persists_read_and_verified_write_receipts(monkeypatch, tm
     evidence = root / "evidence" / certificate.request_id
     read_receipt = (evidence / "datahub-read-receipt.json").read_text()
     write_receipt = (evidence / "datahub-write-receipt.json").read_text()
+    read_payload = DataHubReadReceipt.model_validate_json(read_receipt)
     assert '"verified": true' in write_receipt
     assert "get_lineage" in read_receipt
+    assert read_payload.request_id == certificate.request_id
+    assert read_payload.plan_hash == certificate.plan_hash
+    assert read_payload.receipt_sha256 == certificate.datahub_read_receipt_sha256
+    assert (
+        json.loads(canonical_certificate_payload(certificate))["hash_schema"]
+        == "forgetme-certificate-v2"
+    )
+    assert read_payload.verifies_binding(
+        request_id=certificate.request_id,
+        plan_hash=certificate.plan_hash,
+        receipt_sha256=certificate.datahub_read_receipt_sha256 or "",
+    )
+    assert not read_payload.verifies_binding(
+        request_id="req-different-request",
+        plan_hash=certificate.plan_hash,
+        receipt_sha256=certificate.datahub_read_receipt_sha256 or "",
+    )
     assert "Synthetic Subject" not in read_receipt + write_receipt
     assert '"42"' not in read_receipt + write_receipt
+
+    certificate_path = evidence / "certificate.json"
+    assert verify_certificate_file(certificate_path) == certificate
+    copied_receipt = read_payload.bind(
+        request_id="req-different-request",
+        plan_hash=certificate.plan_hash,
+    )
+    (evidence / "datahub-read-receipt.json").write_text(
+        copied_receipt.model_dump_json(indent=2) + "\n",
+        encoding="utf-8",
+    )
+    with pytest.raises(ValueError, match="binding verification failed"):
+        verify_certificate_file(certificate_path)
+
+
+def test_live_read_receipt_is_persisted_before_execution(monkeypatch, tmp_path) -> None:
+    class FakeReader:
+        def __init__(self, *, namespace_prefix, client) -> None:
+            assert namespace_prefix == "forgetme."
+
+        async def read_context(self, *, entrypoint_urns, expected_urns):
+            expected = sorted(expected_urns)
+            return DataHubReadReceipt(
+                generated_at=datetime.now(UTC),
+                entrypoint_urns=sorted(entrypoint_urns),
+                entity_urns=expected,
+                lineage_urns=expected,
+                tools=["get_entities", "get_lineage"],
+                entity_response_sha256="e" * 64,
+                lineage_response_sha256="l" * 64,
+            )
+
+    root = tmp_path / "fixtures" / "forget-me-graph"
+
+    def fail_during_execution(**kwargs):
+        plan = kwargs["plan"]
+        path = root / "evidence" / plan.request_id / "datahub-read-receipt.json"
+        receipt = DataHubReadReceipt.model_validate_json(path.read_text(encoding="utf-8"))
+        assert receipt.verifies_binding(
+            request_id=plan.request_id,
+            plan_hash=plan.plan_hash,
+            receipt_sha256=receipt.receipt_sha256 or "",
+        )
+        raise RuntimeError("forced execution boundary failure")
+
+    monkeypatch.setattr(workflow, "DataHubMcpReader", FakeReader)
+    monkeypatch.setattr(workflow, "execute_plan", fail_during_execution)
+    settings = SimpleNamespace(
+        datahub_gms_url="http://127.0.0.1:8080",
+        datahub_mcp_url="http://127.0.0.1:8000/mcp",
+        datahub_token=object(),
+        datahub_urn_prefix="forgetme.",
+    )
+
+    with pytest.raises(RuntimeError, match="forced execution boundary failure"):
+        workflow.run_workflow(
+            root=root,
+            project_root=Path(__file__).parents[1],
+            confirmed_by="privacy-operator",
+            request_id="req-read-before-execution",
+            seed=True,
+            require_datahub=True,
+            settings=settings,
+        )
+
+    assert (root / "evidence/req-read-before-execution/datahub-read-receipt.json").is_file()
+
+
+def test_live_read_receipt_is_not_written_without_fixture_marker(monkeypatch, tmp_path) -> None:
+    class FakeReader:
+        def __init__(self, *, namespace_prefix, client) -> None:
+            assert namespace_prefix == "forgetme."
+
+        async def read_context(self, *, entrypoint_urns, expected_urns):
+            expected = sorted(expected_urns)
+            return DataHubReadReceipt(
+                generated_at=datetime.now(UTC),
+                entrypoint_urns=sorted(entrypoint_urns),
+                entity_urns=expected,
+                lineage_urns=expected,
+                tools=["get_entities", "get_lineage"],
+                entity_response_sha256="e" * 64,
+                lineage_response_sha256="l" * 64,
+            )
+
+    monkeypatch.setattr(workflow, "DataHubMcpReader", FakeReader)
+    settings = SimpleNamespace(
+        datahub_gms_url="http://127.0.0.1:8080",
+        datahub_mcp_url="http://127.0.0.1:8000/mcp",
+        datahub_token=object(),
+        datahub_urn_prefix="forgetme.",
+    )
+    root = tmp_path / "unmarked"
+
+    with pytest.raises(SafetyViolation, match="marked demo fixture"):
+        workflow.run_workflow(
+            root=root,
+            project_root=Path(__file__).parents[1],
+            confirmed_by="privacy-operator",
+            request_id="req-unmarked-read-receipt",
+            require_datahub=True,
+            settings=settings,
+        )
+
+    assert not (root / "evidence").exists()
+
+
+@pytest.mark.parametrize(
+    ("entrypoint", "program"),
+    [
+        (workflow.main, "forgetmegraph-workflow"),
+        (datahub_catalog.main, "forgetmegraph-datahub"),
+    ],
+)
+def test_cli_help_does_not_require_app_env(monkeypatch, capsys, entrypoint, program) -> None:
+    monkeypatch.delenv("APP_ENV", raising=False)
+    monkeypatch.setattr(sys, "argv", [program, "--help"])
+
+    with pytest.raises(SystemExit) as exc_info:
+        entrypoint()
+
+    assert exc_info.value.code == 0
+    assert "usage:" in capsys.readouterr().out
 
 
 def test_live_workflow_blocks_before_deletion_when_datahub_is_unconfigured(tmp_path) -> None:
@@ -280,7 +475,7 @@ def test_live_workflow_blocks_before_deletion_when_datahub_is_unconfigured(tmp_p
         workflow.run_workflow(
             root=root,
             project_root=Path(__file__).parents[1],
-            approver="privacy-operator",
+            confirmed_by="privacy-operator",
             request_id="req-fail-closed-test",
             require_datahub=True,
             settings=settings,
@@ -288,3 +483,31 @@ def test_live_workflow_blocks_before_deletion_when_datahub_is_unconfigured(tmp_p
 
     after = inspect_presence(root, customer_id=6 * 7)
     assert after == before
+
+
+def test_live_workflow_checks_datahub_before_fixture_reset(tmp_path) -> None:
+    root = tmp_path / "fixtures" / "forget-me-graph"
+    before = seed_estate(root)
+    sentinel = root / "evidence" / "prior-request" / "sentinel.txt"
+    sentinel.parent.mkdir(parents=True)
+    sentinel.write_text("prior evidence", encoding="utf-8")
+    settings = SimpleNamespace(
+        datahub_gms_url=None,
+        datahub_mcp_url=None,
+        datahub_token=None,
+        datahub_urn_prefix="forgetme.",
+    )
+
+    with pytest.raises(DataHubIntegrationError, match="not fully configured"):
+        workflow.run_workflow(
+            root=root,
+            project_root=Path(__file__).parents[1],
+            confirmed_by="privacy-operator",
+            request_id="req-gate-before-reset",
+            seed=True,
+            require_datahub=True,
+            settings=settings,
+        )
+
+    assert inspect_presence(root, customer_id=6 * 7) == before
+    assert sentinel.read_text(encoding="utf-8") == "prior evidence"

@@ -266,8 +266,8 @@
     setText(byId("selector-token-preview"), maskedToken(plan.selector.token));
     byId("run-workflow").disabled = false;
     setText(
-      byId("approval-note"),
-      "Approval will be bound to the displayed SHA-256 plan hash.",
+      byId("confirmation-note"),
+      "Confirmation will be bound to the displayed SHA-256 plan hash.",
     );
   }
 
@@ -291,7 +291,7 @@
       state.plan = plan;
       state.selectorValue = selectorValue;
       selectorInput.value = "";
-      selectorInput.placeholder = "Held in memory for approved run";
+      selectorInput.placeholder = "Held in memory for confirmed run";
       renderPlan(plan);
       showToast("Impact plan built. The raw selector is no longer displayed.", "success");
       byId("plan").scrollIntoView({ behavior: "smooth", block: "start" });
@@ -386,14 +386,17 @@
   }
 
   function renderCertificate(result) {
-    byId("certificate-card").dataset.state =
-      result.status === "failed" ? "failed" : "complete";
+    const incomplete = result.status === "incomplete";
+    byId("certificate-card").dataset.state = incomplete ? "failed" : "complete";
+    setText(byId("certificate-seal-mark"), incomplete ? "!" : "✓");
     setText(byId("certificate-status"), result.status.replaceAll("_", " "));
     setText(
       byId("certificate-description"),
       result.status === "verified_with_limitations"
         ? "All addressable descendants verified. The subject-unaddressable aggregate remains explicitly exempt."
-        : "The certificate records the exact independently verified outcome.",
+        : result.status === "incomplete"
+          ? "The workflow is incomplete. Review the failed or blocked evidence before relying on this result."
+          : "The certificate records the exact independently verified outcome.",
     );
     setText(byId("certificate-hash"), shortHash(result.certificate_hash));
     byId("certificate-hash").title = result.certificate_hash;
@@ -415,6 +418,14 @@
     addDownload(actions, "DataHub write receipt", result.evidence["datahub-write-receipt.json"]);
   }
 
+  function resultPhaseState(items, actions) {
+    const relevant = items.filter((item) => actions.includes(item.action));
+    if (!relevant.length) return "skipped";
+    return relevant.some((item) => item.status === "failed" || item.status === "blocked")
+      ? "failed"
+      : "complete";
+  }
+
   function markTimelineFailure() {
     const active = document.querySelector('.timeline-item[data-state="active"]');
     if (active) {
@@ -428,7 +439,7 @@
     const form = event.currentTarget;
     if (!form.reportValidity() || !state.plan || !state.selectorValue || state.running) {
       if (!state.plan || !state.selectorValue) {
-        showToast("Build a fresh plan before approval.", "error");
+        showToast("Build a fresh plan before confirmation.", "error");
       }
       return;
     }
@@ -445,19 +456,43 @@
           request_id: state.plan.request_id,
           selector_value: state.selectorValue,
           plan_hash: state.plan.plan_hash,
-          approver: byId("approver").value,
-          approved: byId("approval-check").checked,
+          confirmed_by: byId("confirmer").value,
+          confirmed: byId("confirmation-check").checked,
           reset_synthetic_estate: byId("reset-fixture").checked,
           require_datahub: byId("require-datahub").checked,
         }),
       });
-      ["purge", "retrain", "verify"].forEach((phase) => setTimeline(phase, "complete"));
+      const resultItems = result.items || [];
+      setTimeline(
+        "purge",
+        resultPhaseState(resultItems, [
+          "row_purge",
+          "rebuild",
+          "vector_delete_reindex",
+          "cache_evict",
+          "export_replace",
+        ]),
+      );
+      setTimeline("retrain", resultPhaseState(resultItems, ["retrain"]));
       setTimeline("context", result.datahub_required ? "complete" : "skipped");
-      setTimeline("writeback", result.datahub_required ? "complete" : "skipped");
+      setTimeline("verify", result.status === "incomplete" ? "failed" : "complete");
+      setTimeline(
+        "writeback",
+        result.datahub_required
+          ? result.evidence.datahub_write_verified
+            ? "complete"
+            : "failed"
+          : "skipped",
+      );
       state.selectorValue = null;
-      renderVerification(result.items || []);
+      renderVerification(resultItems);
       renderCertificate(result);
-      showToast("Workflow verified. Evidence certificate is ready.", "success");
+      showToast(
+        result.status === "incomplete"
+          ? "Workflow incomplete. Review failed or blocked evidence."
+          : "Workflow verified. Evidence certificate is ready.",
+        result.status === "incomplete" ? "error" : "success",
+      );
       byId("certificate").scrollIntoView({ behavior: "smooth", block: "start" });
       await refreshReadiness();
     } catch (error) {
@@ -465,7 +500,7 @@
       showToast(`${error.message} No success was recorded.`, "error");
     } finally {
       state.running = false;
-      runButton.textContent = "Approve & execute guarded workflow";
+      runButton.textContent = "Confirm & execute guarded workflow";
       runButton.disabled = !state.plan || !state.selectorValue;
     }
   }
@@ -491,7 +526,7 @@
 
   document.addEventListener("DOMContentLoaded", () => {
     byId("request-form").addEventListener("submit", buildPlan);
-    byId("approval-form").addEventListener("submit", executeWorkflow);
+    byId("confirmation-form").addEventListener("submit", executeWorkflow);
     byId("toggle-selector").addEventListener("click", toggleSelector);
     byId("refresh-readiness").addEventListener("click", refreshReadiness);
     byId("request-id").addEventListener("input", () => {
@@ -499,7 +534,7 @@
       state.plan = null;
       state.selectorValue = null;
       byId("run-workflow").disabled = true;
-      setText(byId("approval-note"), "The request changed. Build a fresh plan.");
+      setText(byId("confirmation-note"), "The request changed. Build a fresh plan.");
     });
     Promise.allSettled([refreshReadiness(), loadOverview()]);
   });

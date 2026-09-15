@@ -10,19 +10,12 @@ from typing import Protocol
 from pydantic import BaseModel, ConfigDict
 
 from forgetmegraph.config import Settings
+from forgetmegraph.context.namespace import dataset_urn_is_namespaced
 from forgetmegraph.domain.models import ActionPlan
 from forgetmegraph.verification.certificate import EvidenceCertificate
 
 REQUIRED_MCP_TOOLS = frozenset({"get_entities", "get_lineage"})
-ASSET_URN_PREFIXES = (
-    "urn:li:dataset:",
-    "urn:li:dataJob:",
-    "urn:li:chart:",
-    "urn:li:dashboard:",
-    "urn:li:mlFeatureTable:",
-    "urn:li:mlModel:",
-    "urn:li:mlModelGroup:",
-)
+DATASET_URN_PREFIX = "urn:li:dataset:"
 WRITE_PROPERTY_PREFIX = "forgetme."
 
 
@@ -47,6 +40,9 @@ class GraphClient(Protocol):
 class DataHubReadReceipt(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True)
 
+    schema_version: str | None = None
+    request_id: str | None = None
+    plan_hash: str | None = None
     generated_at: datetime
     entrypoint_urns: list[str]
     entity_urns: list[str]
@@ -54,6 +50,54 @@ class DataHubReadReceipt(BaseModel):
     tools: list[str]
     entity_response_sha256: str
     lineage_response_sha256: str
+    context_sha256: str | None = None
+    receipt_sha256: str | None = None
+
+    def bind(self, *, request_id: str, plan_hash: str) -> DataHubReadReceipt:
+        context_payload = {
+            "entrypoint_urns": self.entrypoint_urns,
+            "entity_urns": self.entity_urns,
+            "lineage_urns": self.lineage_urns,
+            "tools": self.tools,
+            "entity_response_sha256": self.entity_response_sha256,
+            "lineage_response_sha256": self.lineage_response_sha256,
+        }
+        bound = self.model_copy(
+            update={
+                "schema_version": "forgetme-datahub-read-receipt-v2",
+                "request_id": request_id,
+                "plan_hash": plan_hash,
+                "context_sha256": _canonical_sha256(context_payload),
+                "receipt_sha256": None,
+            }
+        )
+        receipt_hash = _canonical_sha256(bound.model_dump(mode="json", exclude={"receipt_sha256"}))
+        return bound.model_copy(update={"receipt_sha256": receipt_hash})
+
+    def verifies_binding(
+        self,
+        *,
+        request_id: str,
+        plan_hash: str,
+        receipt_sha256: str,
+    ) -> bool:
+        if (
+            self.schema_version != "forgetme-datahub-read-receipt-v2"
+            or self.request_id != request_id
+            or self.plan_hash != plan_hash
+            or self.receipt_sha256 != receipt_sha256
+        ):
+            return False
+        unbound = self.model_copy(
+            update={
+                "schema_version": None,
+                "request_id": None,
+                "plan_hash": None,
+                "context_sha256": None,
+                "receipt_sha256": None,
+            }
+        )
+        return unbound.bind(request_id=request_id, plan_hash=plan_hash) == self
 
 
 class DataHubWriteReceipt(BaseModel):
@@ -114,14 +158,19 @@ def _asset_urns(value: object) -> set[str]:
     elif isinstance(value, list):
         for child in value:
             found.update(_asset_urns(child))
-    elif isinstance(value, str) and value.startswith(ASSET_URN_PREFIXES):
+    elif isinstance(value, str) and value.startswith(DATASET_URN_PREFIX):
         found.add(value)
     return found
 
 
 def require_namespaced_urns(urns: Iterable[str], prefix: str) -> set[str]:
     urn_set = set(urns)
-    outside = sorted(urn for urn in urn_set if prefix not in urn)
+    try:
+        outside = sorted(urn for urn in urn_set if not dataset_urn_is_namespaced(urn, prefix))
+    except ValueError as exc:
+        raise DataHubIntegrationError(
+            "DataHub returned an unsupported or malformed asset URN"
+        ) from exc
     if outside:
         raise DataHubIntegrationError(
             "DataHub returned assets outside the allocated project namespace"
@@ -149,10 +198,14 @@ class DataHubMcpReader:
         entity_raw = await self._client.call_tool("get_entities", {"urns": sorted(expected)})
         entity_payload = _object_payload(entity_raw)
         entity_urns = require_namespaced_urns(_asset_urns(entity_payload), self._namespace_prefix)
-        if not expected.issubset(entity_urns):
+        missing_entities = expected - entity_urns
+        unexpected_entities = entity_urns - expected
+        if missing_entities:
             raise DataHubIntegrationError(
                 "DataHub entity context is incomplete for the action scope"
             )
+        if unexpected_entities:
+            raise DataHubIntegrationError("DataHub entity context contains unplanned assets")
 
         lineage_payloads: list[object] = []
         lineage_urns = set(entrypoints)
@@ -171,8 +224,12 @@ class DataHubMcpReader:
             lineage_urns.update(
                 require_namespaced_urns(_asset_urns(payload), self._namespace_prefix)
             )
-        if not expected.issubset(lineage_urns):
+        missing_lineage = expected - lineage_urns
+        unexpected_lineage = lineage_urns - expected
+        if missing_lineage:
             raise DataHubIntegrationError("DataHub lineage is incomplete for the action scope")
+        if unexpected_lineage:
+            raise DataHubIntegrationError("DataHub lineage contains unplanned assets")
 
         return DataHubReadReceipt(
             generated_at=datetime.now(UTC),

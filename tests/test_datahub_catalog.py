@@ -251,6 +251,18 @@ def test_catalog_fixture_rejects_foreign_namespace_before_emit(tmp_path) -> None
         load_catalog_fixture(unsafe_path, namespace_prefix="forgetme.")
 
 
+def test_catalog_fixture_rejects_namespace_prefix_outside_dataset_name(tmp_path) -> None:
+    payload = json.loads(FIXTURE_PATH.read_text())
+    payload["artifacts"][0]["urn"] = (
+        "urn:li:dataset:(urn:li:dataPlatform:forgetme.duckdb,other.raw.customers,PROD)"
+    )
+    unsafe_path = tmp_path / "embedded-prefix-graph.json"
+    unsafe_path.write_text(json.dumps(payload))
+
+    with pytest.raises(DataHubIntegrationError, match="foreign namespace"):
+        load_catalog_fixture(unsafe_path, namespace_prefix="forgetme.")
+
+
 def test_catalog_fixture_rejects_namespaced_nonfixture_target(tmp_path) -> None:
     payload = json.loads(FIXTURE_PATH.read_text())
     payload["artifacts"].append(

@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 import asyncio
 import json
+import os
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -18,7 +19,8 @@ from forgetmegraph.context.provider import FixtureContextProvider
 from forgetmegraph.demo.seed import DEMO_SECRET, seed_estate
 from forgetmegraph.domain.models import ActionPlan, Artifact, ProtectedSelector, SubjectSelector
 from forgetmegraph.execution.engine import execute_plan
-from forgetmegraph.execution.models import Approval
+from forgetmegraph.execution.models import PlanConfirmation
+from forgetmegraph.execution.safety import require_fixture_marker
 from forgetmegraph.planning.mappings import MappingRegistry
 from forgetmegraph.planning.planner import build_action_plan
 from forgetmegraph.privacy.selector import SelectorProtector
@@ -64,7 +66,7 @@ def run_workflow(
     *,
     root: Path,
     project_root: Path,
-    approver: str,
+    confirmed_by: str,
     request_id: str = "req-demo-001",
     selector_value: str = "42",
     selector_secret: str = DEMO_SECRET,
@@ -84,9 +86,7 @@ def run_workflow(
     artifacts = prepared.artifacts
     protector = SelectorProtector(selector_secret)
     if expected_plan_hash is not None and expected_plan_hash != plan.plan_hash:
-        raise ValueError("approved plan hash does not match the current deterministic plan")
-    if seed:
-        seed_estate(root, selector_secret=selector_secret)
+        raise ValueError("confirmed plan hash does not match the current deterministic plan")
     read_receipt = None
     live_settings = settings or Settings.from_env()
     if require_datahub:
@@ -109,11 +109,28 @@ def run_workflow(
                 expected_urns=[decision.target_urn for decision in plan.decisions],
             )
         )
-    approval = Approval.grant(plan, approver=approver)
+        read_receipt = read_receipt.bind(
+            request_id=plan.request_id,
+            plan_hash=plan.plan_hash,
+        )
+    if seed:
+        seed_estate(root, selector_secret=selector_secret)
+    if read_receipt is not None:
+        verified_root = require_fixture_marker(root)
+        evidence_dir = verified_root / "evidence" / plan.request_id
+        evidence_dir.mkdir(parents=True, exist_ok=True)
+        read_path = evidence_dir / "datahub-read-receipt.json"
+        read_temporary = read_path.with_suffix(".tmp")
+        read_temporary.write_text(
+            read_receipt.model_dump_json(indent=2) + "\n",
+            encoding="utf-8",
+        )
+        os.replace(read_temporary, read_path)
+    confirmation = PlanConfirmation.grant(plan, confirmed_by=confirmed_by)
     receipts = execute_plan(
         root=root,
         plan=plan,
-        approval=approval,
+        confirmation=confirmation,
         selector=selector,
         protector=protector,
         artifacts=artifacts,
@@ -127,15 +144,15 @@ def run_workflow(
         artifacts=artifacts,
         receipts=receipts,
         selector_secret=selector_secret,
+        datahub_read_receipt_sha256=(
+            read_receipt.receipt_sha256 if read_receipt is not None else None
+        ),
     )
     if require_datahub:
         assert read_receipt is not None
         assert live_settings.datahub_gms_url is not None
         assert live_settings.datahub_token is not None
         evidence_dir = root.resolve() / "evidence" / plan.request_id
-        (evidence_dir / "datahub-read-receipt.json").write_text(
-            read_receipt.model_dump_json(indent=2) + "\n", encoding="utf-8"
-        )
         graph = create_graph_client(
             gms_url=live_settings.datahub_gms_url,
             token=live_settings.datahub_token,
@@ -155,13 +172,18 @@ def run_workflow(
 
 
 def main() -> None:
-    settings = Settings.from_env()
     parser = argparse.ArgumentParser(
-        description="Run the approval-gated synthetic deletion and retraining workflow"
+        description="Run the plan-confirmation-gated synthetic deletion and retraining workflow"
     )
-    parser.add_argument("--approved-by", required=True)
+    parser.add_argument(
+        "--confirmed-by",
+        "--approved-by",
+        dest="confirmed_by",
+        required=True,
+        help="Operator confirming the exact deterministic plan hash.",
+    )
     parser.add_argument("--request-id", default="req-demo-001")
-    parser.add_argument("--root", type=Path, default=settings.demo_fixture_root)
+    parser.add_argument("--root", type=Path)
     parser.add_argument("--project-root", type=Path, default=Path("."))
     parser.add_argument("--seed", action="store_true")
     parser.add_argument(
@@ -170,15 +192,16 @@ def main() -> None:
         help="Fail closed unless live MCP context and verified SDK writeback both succeed.",
     )
     args = parser.parse_args()
+    settings = Settings.from_env()
     selector_secret = settings.selector_secret
     if selector_secret is None:
         if settings.app_env not in {"local", "test"}:
             parser.error("FMG_SELECTOR_SECRET is required outside local/test mode")
         selector_secret = DEMO_SECRET
     certificate = run_workflow(
-        root=args.root,
+        root=args.root or settings.demo_fixture_root,
         project_root=args.project_root,
-        approver=args.approved_by,
+        confirmed_by=args.confirmed_by,
         request_id=args.request_id,
         selector_secret=selector_secret,
         seed=args.seed,

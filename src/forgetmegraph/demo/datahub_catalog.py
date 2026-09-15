@@ -14,6 +14,7 @@ from pydantic import BaseModel, ConfigDict
 
 from forgetmegraph.config import Settings
 from forgetmegraph.context.datahub import DataHubIntegrationError, create_graph_client
+from forgetmegraph.context.namespace import dataset_urn_is_namespaced
 from forgetmegraph.domain.models import Artifact, LineageEdge
 
 PROJECT_SLUG = "forget-me-graph"
@@ -177,7 +178,11 @@ def load_catalog_fixture(path: Path, *, namespace_prefix: str) -> CatalogFixture
     urns = [artifact.urn for artifact in artifacts]
     if len(urns) != len(set(urns)):
         raise DataHubIntegrationError("DataHub catalog fixture contains duplicate targets")
-    if any(not urn.startswith("urn:li:dataset:") or namespace_prefix not in urn for urn in urns):
+    try:
+        has_foreign_urn = any(not dataset_urn_is_namespaced(urn, namespace_prefix) for urn in urns)
+    except ValueError:
+        has_foreign_urn = True
+    if has_foreign_urn:
         raise DataHubIntegrationError("DataHub catalog fixture contains a foreign namespace")
     if set(urns) != set(EXPECTED_ARTIFACTS):
         raise DataHubIntegrationError("DataHub catalog fixture targets differ from the allowlist")
@@ -526,7 +531,6 @@ def write_catalog_receipt(state_dir: Path, receipt: CatalogLifecycleReceipt) -> 
 
 
 def main() -> None:
-    settings = Settings.from_env()
     parser = argparse.ArgumentParser(
         description="Manage the exact allowlisted Forget-Me-Graph DataHub catalog fixture"
     )
@@ -539,8 +543,9 @@ def main() -> None:
         type=Path,
         default=Path("demo/metadata/graph.json"),
     )
-    parser.add_argument("--state-dir", type=Path, default=settings.app_state_dir)
+    parser.add_argument("--state-dir", type=Path)
     args = parser.parse_args()
+    settings = Settings.from_env()
 
     require_catalog_settings(settings)
     if not settings.datahub_gms_url or not settings.datahub_token:
@@ -558,7 +563,7 @@ def main() -> None:
             fixture,
             removed=args.operation == "reset-datahub",
         )
-    receipt_path = write_catalog_receipt(args.state_dir, receipt)
+    receipt_path = write_catalog_receipt(args.state_dir or settings.app_state_dir, receipt)
     print(
         json.dumps(
             {

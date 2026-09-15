@@ -5,7 +5,7 @@ from datetime import UTC, datetime
 from enum import StrEnum
 from hashlib import sha256
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import AliasChoices, BaseModel, ConfigDict, Field
 
 from forgetmegraph.domain.models import ActionPlan, ActionType
 
@@ -15,21 +15,36 @@ class ReceiptStatus(StrEnum):
     FAILED = "failed"
 
 
-class Approval(BaseModel):
-    model_config = ConfigDict(extra="forbid", frozen=True)
+def execution_idempotency_key(
+    *,
+    plan_hash: str,
+    target_urn: str,
+    action: ActionType,
+) -> str:
+    """Return the plan-bound key used to match execution receipts to decisions."""
+
+    return sha256(f"{plan_hash}:{target_urn}:{action.value}".encode()).hexdigest()
+
+
+class PlanConfirmation(BaseModel):
+    model_config = ConfigDict(extra="forbid", frozen=True, populate_by_name=True)
 
     request_id: str
     plan_hash: str
-    approver: str = Field(min_length=1, max_length=200)
-    approved_at: datetime
+    confirmed_by: str = Field(
+        min_length=1,
+        max_length=200,
+        validation_alias=AliasChoices("confirmed_by", "approver"),
+    )
+    confirmed_at: datetime = Field(validation_alias=AliasChoices("confirmed_at", "approved_at"))
 
     @classmethod
-    def grant(cls, plan: ActionPlan, *, approver: str) -> Approval:
+    def grant(cls, plan: ActionPlan, *, confirmed_by: str) -> PlanConfirmation:
         return cls(
             request_id=plan.request_id,
             plan_hash=plan.plan_hash,
-            approver=approver,
-            approved_at=datetime.now(UTC),
+            confirmed_by=confirmed_by,
+            confirmed_at=datetime.now(UTC),
         )
 
 

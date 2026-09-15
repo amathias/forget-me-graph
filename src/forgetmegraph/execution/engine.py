@@ -23,11 +23,16 @@ from forgetmegraph.domain.models import (
     ProtectedSelector,
     SubjectSelector,
 )
-from forgetmegraph.execution.models import Approval, ExecutionReceipt, ReceiptStatus
+from forgetmegraph.execution.models import (
+    ExecutionReceipt,
+    PlanConfirmation,
+    ReceiptStatus,
+    execution_idempotency_key,
+)
 from forgetmegraph.execution.safety import (
-    require_approval,
     require_fixture_marker,
     require_namespace,
+    require_plan_confirmation,
 )
 from forgetmegraph.privacy.selector import SelectorProtector
 
@@ -40,22 +45,34 @@ def _file_hash(path: Path) -> str:
     return digest.hexdigest()
 
 
-def _receipt_path(root: Path) -> Path:
-    return root / "execution_receipts.json"
+def _evidence_dir(root: Path, request_id: str) -> Path:
+    return root / "evidence" / request_id
 
 
-def _load_receipts(root: Path) -> list[ExecutionReceipt]:
-    path = _receipt_path(root)
+def _receipt_path(root: Path, request_id: str) -> Path:
+    return _evidence_dir(root, request_id) / "execution_receipts.json"
+
+
+def _load_receipts(root: Path, request_id: str) -> list[ExecutionReceipt]:
+    path = _receipt_path(root, request_id)
     if not path.exists():
         return []
-    return [
+    receipts = [
         ExecutionReceipt.model_validate(item)
         for item in json.loads(path.read_text(encoding="utf-8"))
     ]
+    if any(receipt.request_id != request_id for receipt in receipts):
+        raise ValueError("request-scoped receipt file contains foreign receipts")
+    return receipts
 
 
-def _write_receipts(root: Path, receipts: list[ExecutionReceipt]) -> None:
-    path = _receipt_path(root)
+def _write_receipts(
+    root: Path,
+    request_id: str,
+    receipts: list[ExecutionReceipt],
+) -> None:
+    path = _receipt_path(root, request_id)
+    path.parent.mkdir(parents=True, exist_ok=True)
     temporary = path.with_suffix(".tmp")
     temporary.write_text(
         json.dumps(
@@ -234,26 +251,45 @@ def execute_plan(
     *,
     root: Path,
     plan: ActionPlan,
-    approval: Approval,
+    confirmation: PlanConfirmation,
     selector: ProtectedSelector,
     protector: SelectorProtector,
     artifacts: Iterable[Artifact],
     selector_secret: str,
     namespace_prefix: str = "forgetme.",
 ) -> list[ExecutionReceipt]:
-    require_approval(plan, approval)
+    require_plan_confirmation(plan, confirmation)
     root = require_fixture_marker(root)
     require_namespace(plan, namespace_prefix)
-    (root / "approval.json").write_text(
-        approval.model_dump_json(indent=2) + "\n",
-        encoding="utf-8",
-    )
     revealed = protector.reveal(selector)
     if revealed.field != "customer_id" or revealed.operator.value != "equals":
         raise ValueError("the local demo adapter supports only customer_id equality")
     customer_id = int(revealed.value)
+    evidence_dir = _evidence_dir(root, plan.request_id)
+    evidence_dir.mkdir(parents=True, exist_ok=True)
+    confirmation_path = evidence_dir / "plan_confirmation.json"
+    confirmation_temporary = confirmation_path.with_suffix(".tmp")
+    confirmation_temporary.write_text(
+        confirmation.model_dump_json(indent=2) + "\n",
+        encoding="utf-8",
+    )
+    os.replace(confirmation_temporary, confirmation_path)
     artifact_by_urn = {artifact.urn: artifact for artifact in artifacts}
-    receipts = _load_receipts(root)
+    expected_receipt_keys = {
+        (decision.target_urn, decision.action): execution_idempotency_key(
+            plan_hash=plan.plan_hash,
+            target_urn=decision.target_urn,
+            action=decision.action,
+        )
+        for decision in plan.decisions
+        if decision.status is DecisionStatus.READY
+    }
+    receipts = [
+        receipt
+        for receipt in _load_receipts(root, plan.request_id)
+        if receipt.idempotency_key
+        == expected_receipt_keys.get((receipt.target_urn, receipt.action))
+    ]
     succeeded = {
         item.idempotency_key for item in receipts if item.status is ReceiptStatus.SUCCEEDED
     }
@@ -262,9 +298,11 @@ def execute_plan(
         if decision.status is not DecisionStatus.READY:
             continue
         artifact = artifact_by_urn[decision.target_urn]
-        idempotency_key = sha256(
-            f"{plan.plan_hash}:{decision.target_urn}:{decision.action.value}".encode()
-        ).hexdigest()
+        idempotency_key = execution_idempotency_key(
+            plan_hash=plan.plan_hash,
+            target_urn=decision.target_urn,
+            action=decision.action,
+        )
         if idempotency_key in succeeded:
             continue
         started_at = datetime.now(UTC)
@@ -289,7 +327,7 @@ def execute_plan(
                 before_count=before_count,
                 after_count=after_count,
                 started_at=started_at,
-                detail="approved local adapter action completed",
+                detail="confirmed local adapter action completed",
             )
         except Exception:
             receipt = ExecutionReceipt.create(
@@ -305,9 +343,9 @@ def execute_plan(
                 detail="local adapter action failed; raw exception was not persisted",
             )
             receipts.append(receipt)
-            _write_receipts(root, receipts)
+            _write_receipts(root, plan.request_id, receipts)
             break
         receipts.append(receipt)
         succeeded.add(idempotency_key)
-        _write_receipts(root, receipts)
+        _write_receipts(root, plan.request_id, receipts)
     return receipts

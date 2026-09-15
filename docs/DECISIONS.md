@@ -25,7 +25,9 @@ Open-source DataHub and its self-hosted MCP server provide live entity and downs
 context. Deterministic fixture metadata still defines executable adapters and explicit selector-key
 mappings, but live MCP must prove every planned target exists in the allocated namespace and is
 reachable from the two entrypoints before execution starts. This retains deterministic action
-selection while making DataHub context a mandatory fail-closed gate in live mode.
+selection while making DataHub context a mandatory fail-closed gate in live mode. The live read
+receipt is versioned, bound to the request and plan hash, atomically persisted before guarded
+adapter execution, and included by hash in the resulting certificate.
 
 ## ADR-004: Clean retraining is not formal unlearning
 
@@ -35,14 +37,15 @@ The MVP rebuilds a training snapshot, retrains a toy model, retires the old mani
 and switches the active model pointer. Certificates state exactly that and make no
 claim of mathematical forgetting.
 
-## ADR-005: Approval binds to an immutable plan hash
+## ADR-005: Operator confirmation binds to an immutable plan hash
 
 **Status:** Accepted
 
-Approval records the request ID, approver, timestamp, and exact action-plan hash. Execution
-rejects stale approval if traversal, mappings, policy, or targets change. Approval alone is not
-enough: every destructive target must also pass the fixture-marker and `forgetme.` namespace
-checks.
+Plan confirmation records the request ID, operator label, timestamp, and exact action-plan hash.
+Execution rejects stale confirmation if traversal, mappings, policy, or targets change.
+Confirmation alone is not enough: every destructive target must also pass the fixture-marker and
+`forgetme.` namespace checks. This is an explicit demo safety interlock, not authenticated approval,
+identity proof, authorization, or enterprise IAM.
 
 ## ADR-006: Evidence is independently derived after execution
 
@@ -100,7 +103,7 @@ Successful seed or restore must make the same live checks pass before readiness 
 The judge console is served by the existing FastAPI process and calls narrow plan, execution,
 overview, readiness, and evidence-download endpoints. It does not reimplement workflow logic in the
 browser. The plan endpoint returns only a protected token and deterministic decisions; execution
-requires the same request selector plus the exact approved plan hash, and rejects a stale hash
+requires the same request selector plus the exact confirmed plan hash, and rejects a stale hash
 before fixture reset. Non-local environments force the live DataHub gate even if a client asks to
 disable it. Evidence downloads use a fixed filename allowlist.
 

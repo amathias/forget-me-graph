@@ -4,9 +4,9 @@ Use this matrix in the UI, README, narration, and Devpost copy.
 
 | Claim | Evidence | Required boundary |
 |---|---|---|
-| DataHub determines live execution scope | MCP rereads all ten entities and complete downstream lineage from both raw entrypoints before adapters run | Only assets in the exact allocated catalog are covered |
+| DataHub determines live execution scope | MCP rereads all ten entities and complete downstream lineage from both raw entrypoints before adapters run; the versioned read receipt is request/plan-bound and its hash is included in the certificate | Only assets in the exact allocated catalog are covered |
 | The system does real work | DuckDB, SQLite, CSV, snapshot, cache, vector, and model artifacts are mutated in the marked disposable fixture | Synthetic fixture only |
-| Approval gates destructive work | Execution requires an approval bound to the deterministic plan SHA-256; stale hashes fail before reset | Process-local demo workflow, not enterprise IAM |
+| Plan confirmation gates destructive work | Execution requires an explicit operator confirmation bound to the deterministic plan SHA-256; stale hashes fail before reset | Self-asserted process-local demo interlock, not authenticated approval or enterprise IAM |
 | Results are independently verified | Fresh store queries and active-manifest checks determine certificate item status | Evidence covers implemented adapters and exact fixture |
 | DataHub receives a supported writeback | The SDK patches five allowlisted custom properties on one allowlisted dataset, then rereads exact values | No lineage mutation or DataHub entity deletion occurs |
 | Reset is isolated | Exact soft reset touched ten project datasets while 102 foreign Lifeboat rows remained byte-for-byte identical | Coordinator-owned live evidence for the deployed backend |

@@ -11,7 +11,7 @@ Build an honest, verifiable deletion path before adding exotic unlearning. The c
 ```text
 /
   app/                  # API, selector propagation, policy, jobs
-  web/                  # request, graph, approval, certificate UI
+  web/                  # request, graph, plan confirmation, certificate UI
   adapters/             # DataHub and artifact executors
   demo/                 # synthetic data/ML/RAG estate and reset
   examples/             # requests and evidence certificates
@@ -59,7 +59,7 @@ Exit condition: the plan correctly classifies every demo artifact without an LLM
 - Implement cache eviction.
 - Implement export regeneration.
 - Implement clean-snapshot toy-model retraining and active-manifest switch.
-- Add approval, idempotency, retry, and resume.
+- Add plan confirmation, idempotency, retry, and resume.
 
 Exit condition: real local artifacts change and a reset reproduces the starting state.
 
@@ -81,7 +81,7 @@ Required screens:
 1. Synthetic deletion request.
 2. DataHub impact graph and selector mappings.
 3. Action plan with limitations.
-4. Approval.
+4. Plan confirmation.
 5. Live execution.
 6. Verification matrix.
 7. Certificate and DataHub writeback.
@@ -105,7 +105,7 @@ Always label retraining separately from formal machine unlearning.
 - Selector mappings.
 - Graph traversal and classifications.
 - Deterministic action policy.
-- Approval and idempotency.
+- Plan confirmation and idempotency.
 - Certificate status aggregation.
 
 ### Integration
@@ -120,7 +120,7 @@ Always label retraining separately from formal machine unlearning.
 
 - Seed synthetic estate.
 - Prove subject presence.
-- Submit and approve request.
+- Submit and confirm request plan.
 - Execute actions.
 - Prove subject absence or documented limitation.
 - Confirm clean model manifest.
@@ -154,7 +154,7 @@ Never cut privacy boundaries, explicit selector mappings, real deletion/retraini
 - [x] Synthetic data only.
 - [x] No raw subject data enters an LLM prompt; the executable workflow uses no LLM.
 - [x] Missing mappings fail closed.
-- [x] Destructive work requires approval.
+- [x] Destructive work requires explicit plan confirmation.
 - [x] “Retrained” is not mislabeled “mathematically unlearned.”
 - [x] Reset and rerun work reliably.
 - [ ] CI covers the privacy and evidence contracts.

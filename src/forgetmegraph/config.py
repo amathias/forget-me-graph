@@ -2,7 +2,33 @@ from __future__ import annotations
 
 import os
 from dataclasses import dataclass
+from enum import StrEnum
 from pathlib import Path
+
+
+class ConfigurationError(ValueError):
+    """Raised when required runtime configuration is missing or invalid."""
+
+
+class AppEnvironment(StrEnum):
+    LOCAL = "local"
+    TEST = "test"
+    HACKATHON = "hackathon"
+    PRODUCTION = "production"
+
+
+def _app_environment() -> AppEnvironment:
+    raw_value = os.getenv("APP_ENV")
+    if raw_value is None or not raw_value.strip():
+        raise ConfigurationError(
+            "APP_ENV is required and must be one of: local, test, hackathon, production"
+        )
+    try:
+        return AppEnvironment(raw_value.strip().lower())
+    except ValueError as exc:
+        raise ConfigurationError(
+            "APP_ENV must be one of: local, test, hackathon, production"
+        ) from exc
 
 
 def _positive_int_env(name: str, default: int) -> int:
@@ -15,7 +41,7 @@ def _positive_int_env(name: str, default: int) -> int:
 @dataclass(frozen=True)
 class Settings:
     project_slug: str
-    app_env: str
+    app_env: AppEnvironment
     app_host: str
     app_port: int
     app_public_url: str | None
@@ -40,7 +66,7 @@ class Settings:
     def from_env(cls) -> Settings:
         return cls(
             project_slug=os.getenv("PROJECT_SLUG", "forget-me-graph"),
-            app_env=os.getenv("APP_ENV", "local"),
+            app_env=_app_environment(),
             app_host=os.getenv("APP_HOST", "127.0.0.1"),
             app_port=int(os.getenv("APP_PORT", "8103")),
             app_public_url=os.getenv("APP_PUBLIC_URL") or None,

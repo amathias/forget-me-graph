@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="dark">
-  <meta name="description" content="Forget-Me-Graph turns DataHub lineage into approval-gated deletion, clean retraining, and verifiable evidence.">
+  <meta name="description" content="Forget-Me-Graph turns DataHub lineage into plan-confirmation-gated deletion, clean retraining, and verifiable evidence.">
   <title>Forget-Me-Graph — Evidence Console</title>
   <link rel="stylesheet" href="/assets/app.css?v=public-demo-boundary">
   <script src="/assets/app.js" defer></script>
@@ -26,7 +26,7 @@
       <a href="#intake">Request</a>
       <a href="#impact">Impact</a>
       <a href="#plan">Plan</a>
-      <a href="#approval">Approve</a>
+      <a href="#confirmation">Confirm</a>
       <a href="#verification">Verify</a>
       <a href="#certificate">Certificate</a>
     </nav>
@@ -38,7 +38,7 @@
 
   <aside class="demo-banner" role="note" aria-label="Public demo notice">
     <strong>PUBLIC DEMO</strong>
-    <span>This hosted judge experience accepts only synthetic subject <code>42</code>. Approved runs are rate-limited, reset only the disposable estate, and write allowlisted evidence to the isolated <code>forgetme.*</code> DataHub allocation. Never enter personal data.</span>
+    <span>This hosted judge experience accepts only synthetic subject <code>42</code>. Confirmed runs are rate-limited, reset only the disposable estate, and write allowlisted evidence to the isolated <code>forgetme.*</code> DataHub allocation. Never enter personal data.</span>
     <span class="demo-links"><a href="https://github.com/amathias/forget-me-graph" target="_blank" rel="noreferrer">Source, API &amp; self-hosting</a></span>
   </aside>
 
@@ -54,7 +54,7 @@
         </div>
         <ul class="trust-row" aria-label="Safety properties">
           <li><span>01</span> Synthetic data only</li>
-          <li><span>02</span> Explicit approval</li>
+          <li><span>02</span> Explicit plan confirmation</li>
           <li><span>03</span> Immediate rereads</li>
         </ul>
       </div>
@@ -122,7 +122,7 @@
           </label>
           <label>Policy basis
             <select id="policy-basis" aria-label="Policy basis">
-              <option>Approved synthetic privacy-request demonstration</option>
+              <option>Confirmed synthetic privacy-request demonstration</option>
             </select>
           </label>
           <button class="button primary full" id="build-plan" type="submit">Build deterministic impact plan <span aria-hidden="true">→</span></button>
@@ -168,7 +168,7 @@
         <div class="plan-summary" id="plan-summary">
           <div><span>Plan state</span><strong>Awaiting request</strong></div>
           <div><span>Bound hash</span><code>—</code></div>
-          <div><span>Approval</span><strong>Required</strong></div>
+          <div><span>Plan confirmation</span><strong>Required</strong></div>
         </div>
         <div class="table-wrap">
           <table>
@@ -179,26 +179,26 @@
       </div>
     </section>
 
-    <section class="workflow-section approval-section" id="approval">
-      <div class="approval-copy">
-        <div><span class="step-number">04</span><span class="kicker">HUMAN APPROVAL GATE</span></div>
-        <h2>Bind consent to the exact plan hash.</h2>
-        <p>Execution refuses stale approval, unknown targets, missing fixture markers, or assets outside <code>forgetme.</code>.</p>
+    <section class="workflow-section confirmation-section" id="confirmation">
+      <div class="confirmation-copy">
+        <div><span class="step-number">04</span><span class="kicker">PLAN CONFIRMATION GATE</span></div>
+        <h2>Bind operator confirmation to the exact plan hash.</h2>
+        <p>Execution refuses stale confirmation, unknown targets, missing fixture markers, or assets outside <code>forgetme.</code>.</p>
       </div>
-      <form class="approval-card panel" id="approval-form">
-        <label>Approver identity
-          <input id="approver" value="demo-privacy-operator" pattern="[A-Za-z0-9 ._@-]{3,80}" required autocomplete="off">
+      <form class="confirmation-card panel" id="confirmation-form">
+        <label>Self-asserted operator label
+          <input id="confirmer" value="demo-privacy-operator" pattern="[A-Za-z0-9 ._@-]{3,80}" required autocomplete="off">
         </label>
         <label class="check-row">
-          <input type="checkbox" id="approval-check" required>
-          <span><strong>I approve this exact plan.</strong><small>Reset and mutate only the marked synthetic fixture, then verify every in-scope descendant.</small></span>
+          <input type="checkbox" id="confirmation-check" required>
+          <span><strong>I confirm this exact plan.</strong><small>Reset and mutate only the marked synthetic fixture, then verify every in-scope descendant.</small></span>
         </label>
         <div class="run-options">
           <label class="mini-check"><input type="checkbox" id="reset-fixture" checked> Reset synthetic fixture first</label>
           <label class="mini-check"><input type="checkbox" id="require-datahub" checked> Require live DataHub read/write</label>
         </div>
-        <button class="button danger full" id="run-workflow" type="submit" disabled>Approve &amp; execute guarded workflow</button>
-        <p class="approval-note" id="approval-note">Build a plan before approval can be granted.</p>
+        <button class="button danger full" id="run-workflow" type="submit" disabled>Confirm &amp; execute guarded workflow</button>
+        <p class="confirmation-note" id="confirmation-note">Build a plan before it can be confirmed.</p>
       </form>
     </section>
 
@@ -238,7 +238,7 @@
         <div class="table-wrap">
           <table>
             <thead><tr><th>Artifact</th><th>Action</th><th>Before</th><th>After</th><th>Evidence status</th></tr></thead>
-            <tbody id="verification-table"><tr class="empty-row"><td colspan="5">Run the approved plan to populate independent verification.</td></tr></tbody>
+            <tbody id="verification-table"><tr class="empty-row"><td colspan="5">Run the confirmed plan to populate independent verification.</td></tr></tbody>
           </table>
         </div>
       </div>
@@ -251,9 +251,9 @@
       </div>
       <div class="certificate-grid">
         <article class="certificate-card panel" id="certificate-card">
-          <div class="certificate-seal" aria-hidden="true"><span>✓</span></div>
+          <div class="certificate-seal" aria-hidden="true"><span id="certificate-seal-mark">✓</span></div>
           <span class="kicker">LATEST WORKFLOW RESULT</span>
-          <h3 id="certificate-status">Awaiting approved execution</h3>
+          <h3 id="certificate-status">Awaiting confirmed execution</h3>
           <p id="certificate-description">The certificate will summarize verified work, limitations, plan binding, and DataHub writeback.</p>
           <dl class="hash-list">
             <div><dt>Certificate SHA-256</dt><dd><code id="certificate-hash">—</code></dd></div>

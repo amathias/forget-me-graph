@@ -1,5 +1,3 @@
-import os
-
 import uvicorn
 from fastapi import FastAPI, Request, Response, status
 from fastapi.exceptions import RequestValidationError
@@ -17,7 +15,7 @@ def _interactive_docs_enabled(app_env: str) -> bool:
     return app_env in {"local", "test"}
 
 
-_docs_enabled = _interactive_docs_enabled(os.getenv("APP_ENV", "local"))
+_docs_enabled = _interactive_docs_enabled(Settings.from_env().app_env)
 app = FastAPI(
     title="Forget-Me-Graph",
     version=__version__,

@@ -11,7 +11,7 @@ def select_action(artifact: Artifact) -> tuple[ActionType, DecisionStatus, str]:
         return (
             ActionType.VERIFY_ONLY,
             DecisionStatus.OUT_OF_SCOPE,
-            "Artifact is explicitly outside the approved demo scope.",
+            "Artifact is explicitly outside the configured demo scope.",
         )
     if artifact.policy == "exempt":
         return (

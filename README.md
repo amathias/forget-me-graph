@@ -6,16 +6,21 @@
 
 **A DataHub-powered deletion and clean-retraining orchestrator with verifiable evidence.**
 
-[Open the public application](https://forgetme.datahub-hackathon.aaronmathias.com) ·
+[View the post-hackathon demo display](https://forgetme.datahub-hackathon.aaronmathias.com) ·
 [View the public repository](https://github.com/amathias/forget-me-graph) ·
-[Watch the public demo](https://youtu.be/yJXGa730xQ0) ·
+[Watch the public demo](https://youtu.be/8X5DlDZyb4A) ·
 [Follow the under-three-minute recording runbook](docs/DEMO_RECORDING.md)
 
-Demo video: **[public on YouTube](https://youtu.be/yJXGa730xQ0)** (2:38, English captions).
+Demo video: **[public on YouTube](https://youtu.be/8X5DlDZyb4A)** (2:38, English captions).
+
+> **Post-hackathon status:** The paid EC2/DataHub judging environment was retired on September 10,
+> 2026. The original public URL now serves a static demo display with the accepted video,
+> screenshot, repository, and Devpost links. The working application remains reproducible locally
+> from this repository.
 
 A source deletion does not remove the same subject from derived tables, feature data, vector
 indexes, caches, exports, training snapshots, or learned artifacts. Forget-Me-Graph turns a scoped
-synthetic request into an exact lineage impact plan, requires approval for the immutable plan hash,
+synthetic request into an exact lineage impact plan, requires operator confirmation of the immutable plan hash,
 executes real disposable mutations, independently verifies every reachable artifact, and writes a
 receipt-backed result to DataHub.
 
@@ -34,7 +39,7 @@ keeps the subject-unaddressable aggregate explicitly exempt._
 flowchart LR
     S["Masked synthetic selector"] --> P["Lineage-bound deletion planner"]
     D["DataHub graph + metadata"] --> P
-    P --> A["Exact-plan human approval"]
+    P --> A["Exact-plan operator confirmation"]
     A --> E["Purge, rebuild, evict, replace, retrain"]
     E --> V["Independent store verification"]
     V --> C["Evidence certificate + DataHub writeback"]
@@ -46,7 +51,7 @@ The same-origin evidence console presents the complete workflow:
 
 1. Enter a masked synthetic selector, then inspect the exact 10-asset, 9-edge DataHub impact graph
    and deterministic action plan.
-2. Approve the exact SHA-256 plan hash and watch guarded adapters mutate only the marked disposable
+2. Confirm the exact SHA-256 plan hash and watch guarded adapters mutate only the marked disposable
    fixture.
 3. Inspect independently queried results, explicit limitations, downloadable certificates, and
    DataHub read/write/reread receipts.
@@ -58,6 +63,8 @@ DataHub integration used by the command-line demo.
 
 - Live open-source DataHub MCP `get_entities` and downstream `get_lineage` calls gate every planned
   target.
+- The versioned DataHub read receipt is bound to the request and plan hash, persisted before guarded
+  adapter execution, and referenced by hash from the evidence certificate.
 - DuckDB row purge and derived/feature rebuilds execute against a marked synthetic fixture.
 - Vector records, cache entries, CSV exports, and training snapshots are deleted or rebuilt.
 - A scikit-learn classifier is fully retrained from the clean snapshot; the old manifest is retired
@@ -74,7 +81,8 @@ DataHub integration used by the command-line demo.
 - Raw selector values are intake-only, marked `repr=False`, omitted from plans/responses/evidence,
   and cleared from the visible form after planning.
 - Request validation errors are generic so rejected values are not echoed.
-- Destructive execution requires explicit approval bound to the current deterministic plan hash.
+- Destructive execution requires explicit operator confirmation bound to the current deterministic
+  plan hash. This demo confirmation is not authenticated authorization or enterprise IAM.
 - The synthetic fixture marker, exact `forgetme.` namespace, fixed target allowlists, and explicit
   selector mappings are checked before mutation.
 - Live environments force the DataHub read/write gate even if a client asks for local mode.
@@ -100,20 +108,24 @@ adoption and self-hosting reference.
 
 Requirements: Python 3.12+.
 
+`APP_ENV` is mandatory. Supported values are `local`, `test`, `hackathon`, and `production`; a
+missing or unknown value stops startup instead of silently enabling local behavior.
+
 ```powershell
+$env:APP_ENV = 'local'
 python -m pip install -e ".[dev,datahub]"
 python -m forgetmegraph.demo.seed seed
 python -m forgetmegraph.api
 ```
 
 Open `http://127.0.0.1:8103`. Local API mode can exercise the real disposable adapters without
-DataHub by clearing **Require live DataHub read/write** in the approval card. The result honestly
+DataHub by clearing **Require live DataHub read/write** in the plan-confirmation card. The result honestly
 labels DataHub context and writeback as not required; it does not produce DataHub receipts.
 
 Command-line equivalent:
 
 ```powershell
-python -m forgetmegraph.demo.workflow --approved-by demo-privacy-operator --seed
+python -m forgetmegraph.demo.workflow --confirmed-by demo-privacy-operator --seed
 ```
 
 ## Run the live DataHub path
@@ -122,11 +134,12 @@ Use a dedicated service-account token supplied out of band. Never echo it, place
 line, or commit it.
 
 ```powershell
+$env:APP_ENV = 'local'
 $env:DATAHUB_GMS_URL = 'http://127.0.0.1:8080'
 $env:DATAHUB_MCP_URL = 'http://127.0.0.1:8000/mcp'
 $env:DATAHUB_URN_PREFIX = 'forgetme.'
 python -m forgetmegraph.demo.datahub_catalog seed-datahub
-python -m forgetmegraph.demo.workflow --approved-by demo-privacy-operator --seed --require-datahub
+python -m forgetmegraph.demo.workflow --confirmed-by demo-privacy-operator --seed --require-datahub
 ```
 
 Catalog lifecycle operations are narrow and reversible:
@@ -149,7 +162,7 @@ node --check src/forgetmegraph/ui/app.js
 python -m forgetmegraph.verification.certificate path/to/certificate.json
 ```
 
-The test suite covers selector propagation, missing mappings, approval/plan binding, fixture and
+The test suite covers selector propagation, missing mappings, plan-confirmation binding, fixture and
 namespace guards, idempotency, real adapters, retained-record failures, retraining, certificate
 accuracy, live-context fail-closed behavior, catalog seed/reset/restore isolation, readiness drift,
 UI redaction, evidence-download allowlists, fixed public selector scope, admission control,
@@ -162,7 +175,7 @@ The public product is deployed at
 Public-environment workflow validation proved:
 
 - exact seed of 10 active datasets and 9 lineage edges;
-- approved workflow with `verified_with_limitations`;
+- confirmed workflow with `verified_with_limitations`;
 - MCP read receipt and supported SDK write with immediate exact reread;
 - readiness transition `200 restored -> 503 reset -> 200 restored`;
 - soft reset preserving 102 foreign Lifeboat aspect rows byte-for-byte;

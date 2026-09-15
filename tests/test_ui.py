@@ -5,7 +5,7 @@ from types import SimpleNamespace
 from fastapi.testclient import TestClient
 
 from forgetmegraph.api import app
-from forgetmegraph.ui.router import _demo_guard
+from forgetmegraph.ui.router import DemoRunRequest, _demo_guard
 
 
 def _client() -> TestClient:
@@ -33,7 +33,8 @@ def test_judge_console_serves_local_assets_and_exact_graph() -> None:
     assert "PUBLIC DEMO" in page.text
     assert "synthetic subject <code>42</code>" in page.text
     assert "Never enter personal data" in page.text
-    assert "approval-form" in page.text
+    assert "confirmation-form" in page.text
+    assert "Self-asserted operator label" in page.text
     assert "external model access" in page.text.lower()
     assert "requestJson" in script.text
     assert "card.className = `node-card" in script.text
@@ -44,6 +45,12 @@ def test_judge_console_serves_local_assets_and_exact_graph() -> None:
     assert "sessionStorage" not in script.text
     assert "console.log" not in script.text
     assert "https://" not in stylesheet.text
+    assert 'result.status === "incomplete"' in script.text
+    assert "Workflow incomplete. Review failed or blocked evidence." in script.text
+    assert 'id="certificate-seal-mark"' in page.text
+    assert 'incomplete ? "!" : "✓"' in script.text
+    assert '.certificate-card[data-state="failed"] .certificate-seal span' in stylesheet.text
+    assert "resultPhaseState" in script.text
     assert overview.status_code == 200
     assert overview.json()["namespace"] == "forgetme."
     assert len(overview.json()["nodes"]) == 10
@@ -80,7 +87,7 @@ def test_validation_error_does_not_echo_rejected_selector() -> None:
     assert raw_value not in response.text
 
 
-def test_demo_run_requires_explicit_approval(monkeypatch, tmp_path: Path) -> None:
+def test_demo_run_requires_explicit_plan_confirmation(monkeypatch, tmp_path: Path) -> None:
     fixture_root = tmp_path / "fixture"
     monkeypatch.setenv("APP_ENV", "test")
     monkeypatch.setenv("DEMO_FIXTURE_ROOT", str(fixture_root))
@@ -91,8 +98,8 @@ def test_demo_run_requires_explicit_approval(monkeypatch, tmp_path: Path) -> Non
         json={
             **_plan_request(),
             "plan_hash": plan["plan_hash"],
-            "approver": "test-privacy-operator",
-            "approved": False,
+            "confirmed_by": "test-privacy-operator",
+            "confirmed": False,
             "reset_synthetic_estate": True,
             "require_datahub": False,
         },
@@ -100,6 +107,20 @@ def test_demo_run_requires_explicit_approval(monkeypatch, tmp_path: Path) -> Non
 
     assert response.status_code == 403
     assert not fixture_root.exists()
+
+
+def test_demo_run_accepts_legacy_approval_field_names() -> None:
+    payload = DemoRunRequest.model_validate(
+        {
+            **_plan_request(),
+            "plan_hash": "0" * 64,
+            "approver": "legacy-client",
+            "approved": True,
+        }
+    )
+
+    assert payload.confirmed_by == "legacy-client"
+    assert payload.confirmed is True
 
 
 def test_stale_plan_is_rejected_before_fixture_reset(monkeypatch, tmp_path: Path) -> None:
@@ -112,19 +133,19 @@ def test_stale_plan_is_rejected_before_fixture_reset(monkeypatch, tmp_path: Path
         json={
             **_plan_request(),
             "plan_hash": "0" * 64,
-            "approver": "test-privacy-operator",
-            "approved": True,
+            "confirmed_by": "test-privacy-operator",
+            "confirmed": True,
             "reset_synthetic_estate": True,
             "require_datahub": False,
         },
     )
 
     assert response.status_code == 409
-    assert response.json()["detail"] == "the approved plan is stale"
+    assert response.json()["detail"] == "the confirmed plan is stale"
     assert not fixture_root.exists()
 
 
-def test_local_approved_run_returns_and_downloads_redacted_evidence(
+def test_local_confirmed_run_returns_and_downloads_redacted_evidence(
     monkeypatch,
     tmp_path: Path,
 ) -> None:
@@ -139,8 +160,8 @@ def test_local_approved_run_returns_and_downloads_redacted_evidence(
         json={
             **_plan_request(),
             "plan_hash": plan["plan_hash"],
-            "approver": "test-privacy-operator",
-            "approved": True,
+            "confirmed_by": "test-privacy-operator",
+            "confirmed": True,
             "reset_synthetic_estate": True,
             "require_datahub": False,
         },
@@ -202,8 +223,8 @@ def test_nonlocal_ui_run_cannot_disable_live_datahub_gate(monkeypatch, tmp_path:
         json={
             **_plan_request(),
             "plan_hash": plan["plan_hash"],
-            "approver": "test-privacy-operator",
-            "approved": True,
+            "confirmed_by": "test-privacy-operator",
+            "confirmed": True,
             "reset_synthetic_estate": False,
             "require_datahub": False,
         },
@@ -211,6 +232,7 @@ def test_nonlocal_ui_run_cannot_disable_live_datahub_gate(monkeypatch, tmp_path:
 
     assert response.status_code == 200
     assert observed["require_datahub"] is True
+    assert observed["confirmed_by"] == "test-privacy-operator"
 
 
 def test_nonlocal_plan_fails_closed_without_selector_secret(monkeypatch) -> None:

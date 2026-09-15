@@ -11,7 +11,7 @@ from typing import Annotated
 from fastapi import APIRouter, HTTPException, Request
 from fastapi import Path as ApiPath
 from fastapi.responses import FileResponse
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import AliasChoices, BaseModel, ConfigDict, Field
 
 from forgetmegraph.config import Settings
 from forgetmegraph.context.datahub import DataHubIntegrationError
@@ -41,9 +41,16 @@ class DemoPlanRequest(BaseModel):
 
 
 class DemoRunRequest(DemoPlanRequest):
+    model_config = ConfigDict(extra="forbid", populate_by_name=True)
+
     plan_hash: str = Field(pattern=r"^[a-f0-9]{64}$")
-    approver: str = Field(min_length=3, max_length=80, pattern=r"^[A-Za-z0-9 ._@-]+$")
-    approved: bool
+    confirmed_by: str = Field(
+        min_length=3,
+        max_length=80,
+        pattern=r"^[A-Za-z0-9 ._@-]+$",
+        validation_alias=AliasChoices("confirmed_by", "approver"),
+    )
+    confirmed: bool = Field(validation_alias=AliasChoices("confirmed", "approved"))
     reset_synthetic_estate: bool = True
     require_datahub: bool = True
 
@@ -262,14 +269,14 @@ def demo_plan(payload: DemoPlanRequest, request: Request) -> dict[str, object]:
         "entrypoint_urns": prepared.plan.entrypoint_urns,
         "plan_hash": prepared.plan.plan_hash,
         "decisions": decisions,
-        "approval_required": True,
+        "confirmation_required": True,
     }
 
 
 @router.post("/api/demo/run")
 async def demo_run(payload: DemoRunRequest, request: Request) -> dict[str, object]:
-    if not payload.approved:
-        raise HTTPException(status_code=403, detail="explicit approval is required")
+    if not payload.confirmed:
+        raise HTTPException(status_code=403, detail="explicit plan confirmation is required")
     settings = Settings.from_env()
     _require_public_selector(settings, payload.selector_value)
     controls_enabled = _public_controls_enabled(settings)
@@ -292,7 +299,7 @@ async def demo_run(payload: DemoRunRequest, request: Request) -> dict[str, objec
             run_workflow,
             root=settings.demo_fixture_root,
             project_root=_project_root(),
-            approver=payload.approver,
+            confirmed_by=payload.confirmed_by,
             request_id=payload.request_id,
             selector_value=payload.selector_value,
             selector_secret=_selector_secret(),
@@ -305,8 +312,8 @@ async def demo_run(payload: DemoRunRequest, request: Request) -> dict[str, objec
         raise HTTPException(status_code=503, detail="the live DataHub gate failed closed") from exc
     except ValueError as exc:
         if "plan hash" in str(exc):
-            raise HTTPException(status_code=409, detail="the approved plan is stale") from exc
-        raise HTTPException(status_code=400, detail="the approved workflow was refused") from exc
+            raise HTTPException(status_code=409, detail="the confirmed plan is stale") from exc
+        raise HTTPException(status_code=400, detail="the confirmed workflow was refused") from exc
     except Exception as exc:
         raise HTTPException(status_code=500, detail="the workflow failed closed") from exc
     finally:

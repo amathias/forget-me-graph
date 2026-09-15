@@ -2,7 +2,7 @@
   "example_kind": "redacted_non_runtime",
   "request_id": "example-request-001",
   "plan_sha256": "<redacted-plan-sha256>",
-  "approval_bound_to_plan_sha256": true,
+  "confirmation_bound_to_plan_sha256": true,
   "summary": {
     "exact_catalog_assets": 10,
     "lineage_edges": 9,

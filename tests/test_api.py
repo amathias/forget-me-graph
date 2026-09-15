@@ -2,6 +2,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from forgetmegraph.api import _interactive_docs_enabled, app
+from forgetmegraph.config import AppEnvironment, ConfigurationError, Settings
 from forgetmegraph.context.datahub import DataHubCapabilityStatus
 
 
@@ -18,6 +19,19 @@ def test_interactive_api_docs_are_local_only() -> None:
     assert _interactive_docs_enabled("test") is True
     assert _interactive_docs_enabled("hackathon") is False
     assert _interactive_docs_enabled("production") is False
+
+
+def test_app_environment_is_explicit_and_allowlisted(monkeypatch) -> None:
+    monkeypatch.delenv("APP_ENV", raising=False)
+    with pytest.raises(ConfigurationError, match="APP_ENV is required"):
+        Settings.from_env()
+
+    monkeypatch.setenv("APP_ENV", "unexpected")
+    with pytest.raises(ConfigurationError, match="must be one of"):
+        Settings.from_env()
+
+    monkeypatch.setenv("APP_ENV", "production")
+    assert Settings.from_env().app_env is AppEnvironment.PRODUCTION
 
 
 def test_nonlocal_responses_include_security_headers(monkeypatch) -> None:

@@ -1,1 +1,1 @@
-"""Approval-gated, idempotent local execution."""
+"""Plan-confirmation-gated, idempotent local execution."""
