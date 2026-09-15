@@ -23,6 +23,7 @@ from forgetmegraph.domain.models import (
     ProtectedSelector,
     SubjectSelector,
 )
+from forgetmegraph.errors import PolicyViolation
 from forgetmegraph.execution.models import (
     ExecutionReceipt,
     PlanConfirmation,
@@ -62,7 +63,7 @@ def _load_receipts(root: Path, request_id: str) -> list[ExecutionReceipt]:
         for item in json.loads(path.read_text(encoding="utf-8"))
     ]
     if any(receipt.request_id != request_id for receipt in receipts):
-        raise ValueError("request-scoped receipt file contains foreign receipts")
+        raise PolicyViolation("request-scoped receipt file contains foreign receipts")
     return receipts
 
 
@@ -127,7 +128,7 @@ def _rebuild_features(root: Path) -> None:
 
 def _purge_rows(root: Path, table: str, customer_id: int) -> None:
     if table not in {"raw.customers", "raw.tickets"}:
-        raise ValueError("row purge target is not allowlisted")
+        raise PolicyViolation("row purge target is not allowlisted")
     connection = duckdb.connect(str(root / "estate.duckdb"))
     try:
         connection.execute(f"DELETE FROM {table} WHERE customer_id = ?", [customer_id])
@@ -230,7 +231,7 @@ def _execute_decision(
                 root / "training_snapshot_v2.csv",
             )
         else:
-            raise ValueError("rebuild target is not allowlisted")
+            raise PolicyViolation("rebuild target is not allowlisted")
     elif decision.action is ActionType.VECTOR_DELETE_REINDEX:
         _delete_vectors(root, customer_id)
     elif decision.action is ActionType.CACHE_EVICT:
@@ -244,7 +245,7 @@ def _execute_decision(
     elif decision.action is ActionType.RETRAIN:
         _retrain_model(root, protector)
     else:
-        raise ValueError("action is not executable by the local adapter set")
+        raise PolicyViolation("action is not executable by the local adapter set")
 
 
 def execute_plan(
@@ -263,7 +264,7 @@ def execute_plan(
     require_namespace(plan, namespace_prefix)
     revealed = protector.reveal(selector)
     if revealed.field != "customer_id" or revealed.operator.value != "equals":
-        raise ValueError("the local demo adapter supports only customer_id equality")
+        raise PolicyViolation("the local demo adapter supports only customer_id equality")
     customer_id = int(revealed.value)
     evidence_dir = _evidence_dir(root, plan.request_id)
     evidence_dir.mkdir(parents=True, exist_ok=True)

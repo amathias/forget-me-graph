@@ -4,10 +4,10 @@ import os
 from dataclasses import dataclass
 from enum import StrEnum
 from pathlib import Path
+from urllib.parse import urlparse
 
-
-class ConfigurationError(ValueError):
-    """Raised when required runtime configuration is missing or invalid."""
+from forgetmegraph.errors import ConfigurationError
+from forgetmegraph.privacy.selector import SelectorProtectionError, validate_selector_secret
 
 
 class AppEnvironment(StrEnum):
@@ -32,10 +32,25 @@ def _app_environment() -> AppEnvironment:
 
 
 def _positive_int_env(name: str, default: int) -> int:
-    value = int(os.getenv(name, str(default)))
+    try:
+        value = int(os.getenv(name, str(default)))
+    except ValueError as exc:
+        raise ConfigurationError(f"{name} must be a positive integer") from exc
     if value < 1:
-        raise ValueError(f"{name} must be a positive integer")
+        raise ConfigurationError(f"{name} must be a positive integer")
     return value
+
+
+def _port_env(name: str, default: int) -> int:
+    value = _positive_int_env(name, default)
+    if value > 65535:
+        raise ConfigurationError(f"{name} must be between 1 and 65535")
+    return value
+
+
+def _valid_http_url(value: str) -> bool:
+    parsed = urlparse(value)
+    return parsed.scheme in {"http", "https"} and bool(parsed.netloc)
 
 
 @dataclass(frozen=True)
@@ -62,13 +77,53 @@ class Settings:
     demo_run_global_limit_per_ten_minutes: int
     demo_run_cooldown_seconds: int
 
+    def __post_init__(self) -> None:
+        if not isinstance(self.app_env, AppEnvironment):
+            raise ConfigurationError("app_env must be a supported AppEnvironment")
+        if not 1 <= self.app_port <= 65535:
+            raise ConfigurationError("APP_PORT must be between 1 and 65535")
+        positive_values = {
+            "DEMO_PLAN_CLIENT_LIMIT_PER_MINUTE": self.demo_plan_client_limit_per_minute,
+            "DEMO_PLAN_GLOBAL_LIMIT_PER_MINUTE": self.demo_plan_global_limit_per_minute,
+            "DEMO_RUN_CLIENT_LIMIT_PER_TEN_MINUTES": self.demo_run_client_limit_per_ten_minutes,
+            "DEMO_RUN_GLOBAL_LIMIT_PER_TEN_MINUTES": self.demo_run_global_limit_per_ten_minutes,
+            "DEMO_RUN_COOLDOWN_SECONDS": self.demo_run_cooldown_seconds,
+        }
+        for name, value in positive_values.items():
+            if value < 1:
+                raise ConfigurationError(f"{name} must be a positive integer")
+        if self.selector_secret is not None:
+            try:
+                validate_selector_secret(self.selector_secret)
+            except SelectorProtectionError as exc:
+                raise ConfigurationError("FMG_SELECTOR_SECRET is invalid") from exc
+        for name, value in (
+            ("APP_PUBLIC_URL", self.app_public_url),
+            ("DATAHUB_GMS_URL", self.datahub_gms_url),
+            ("DATAHUB_MCP_URL", self.datahub_mcp_url),
+        ):
+            if value is not None and not _valid_http_url(value):
+                raise ConfigurationError(f"{name} must be an absolute HTTP(S) URL")
+        if self.app_env in {AppEnvironment.HACKATHON, AppEnvironment.PRODUCTION}:
+            required_values = (
+                self.selector_secret,
+                self.datahub_gms_url,
+                self.datahub_mcp_url,
+                self.datahub_token,
+            )
+            if not all(value and value.strip() for value in required_values):
+                raise ConfigurationError(
+                    "non-local runtime configuration requires selector protection "
+                    "and DataHub access"
+                )
+
     @classmethod
     def from_env(cls) -> Settings:
         return cls(
             project_slug=os.getenv("PROJECT_SLUG", "forget-me-graph"),
             app_env=_app_environment(),
             app_host=os.getenv("APP_HOST", "127.0.0.1"),
-            app_port=int(os.getenv("APP_PORT", "8103")),
+            app_port=_port_env("APP_PORT", 8103),
             app_public_url=os.getenv("APP_PUBLIC_URL") or None,
             app_state_dir=Path(os.getenv("APP_STATE_DIR", "demo/state/forget-me-graph")),
             datahub_gms_url=os.getenv("DATAHUB_GMS_URL") or None,

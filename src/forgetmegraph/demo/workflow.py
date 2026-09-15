@@ -18,6 +18,7 @@ from forgetmegraph.context.datahub import (
 from forgetmegraph.context.provider import FixtureContextProvider
 from forgetmegraph.demo.seed import DEMO_SECRET, seed_estate
 from forgetmegraph.domain.models import ActionPlan, Artifact, ProtectedSelector, SubjectSelector
+from forgetmegraph.errors import StalePlanError
 from forgetmegraph.execution.engine import execute_plan
 from forgetmegraph.execution.models import PlanConfirmation
 from forgetmegraph.execution.safety import require_fixture_marker
@@ -86,7 +87,7 @@ def run_workflow(
     artifacts = prepared.artifacts
     protector = SelectorProtector(selector_secret)
     if expected_plan_hash is not None and expected_plan_hash != plan.plan_hash:
-        raise ValueError("confirmed plan hash does not match the current deterministic plan")
+        raise StalePlanError("confirmed plan hash does not match the current deterministic plan")
     read_receipt = None
     live_settings = settings or Settings.from_env()
     if require_datahub:

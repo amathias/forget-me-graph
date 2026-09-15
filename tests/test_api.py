@@ -1,13 +1,58 @@
+from dataclasses import replace
+
 import pytest
 from fastapi.testclient import TestClient
 
-from forgetmegraph.api import _interactive_docs_enabled, app
+from forgetmegraph.api import _interactive_docs_enabled, create_app
 from forgetmegraph.config import AppEnvironment, ConfigurationError, Settings
 from forgetmegraph.context.datahub import DataHubCapabilityStatus
+from forgetmegraph.services import default_application_services
+
+BASE_SETTINGS = Settings.from_env()
+
+
+def _settings(**changes) -> Settings:
+    return replace(BASE_SETTINGS, app_env=AppEnvironment.TEST, **changes)
+
+
+def _production_settings(**changes) -> Settings:
+    values = {
+        "app_env": AppEnvironment.PRODUCTION,
+        "selector_secret": "production-api-test-secret",
+        "datahub_gms_url": "https://datahub.example.test",
+        "datahub_mcp_url": "https://datahub.example.test/mcp",
+        "datahub_token": "test-only-token",
+    }
+    values.update(changes)
+    return replace(BASE_SETTINGS, **values)
+
+
+def _services_with_probe(probe):
+    return replace(default_application_services(), datahub_probe=probe)
+
+
+def _seeded_fixture(tmp_path):
+    fixture = tmp_path / "forget-me-graph"
+    fixture.mkdir()
+    (fixture / ".forgetmegraph-demo").write_text(
+        "synthetic disposable demo artifacts\n",
+        encoding="utf-8",
+    )
+    return fixture
+
+
+async def _successful_probe(_settings):
+    return DataHubCapabilityStatus(
+        ready=True,
+        gms="connected",
+        mcp="connected",
+        catalog="ready",
+        capabilities=["get_entities", "get_lineage"],
+    )
 
 
 def test_coordinator_health_contract() -> None:
-    response = TestClient(app).get("/api/health")
+    response = TestClient(create_app(_settings())).get("/api/health")
 
     assert response.status_code == 200
     assert response.json()["status"] == "ok"
@@ -31,13 +76,15 @@ def test_app_environment_is_explicit_and_allowlisted(monkeypatch) -> None:
         Settings.from_env()
 
     monkeypatch.setenv("APP_ENV", "production")
+    monkeypatch.setenv("FMG_SELECTOR_SECRET", "production-api-test-secret")
+    monkeypatch.setenv("DATAHUB_GMS_URL", "https://datahub.example.test")
+    monkeypatch.setenv("DATAHUB_MCP_URL", "https://datahub.example.test/mcp")
+    monkeypatch.setenv("DATAHUB_TOKEN", "test-only-token")
     assert Settings.from_env().app_env is AppEnvironment.PRODUCTION
 
 
-def test_nonlocal_responses_include_security_headers(monkeypatch) -> None:
-    monkeypatch.setenv("APP_ENV", "production")
-
-    response = TestClient(app).get("/api/demo/overview")
+def test_nonlocal_responses_include_security_headers() -> None:
+    response = TestClient(create_app(_production_settings())).get("/api/demo/overview")
 
     assert response.status_code == 200
     assert response.headers["content-security-policy"].startswith("default-src 'self'")
@@ -47,10 +94,21 @@ def test_nonlocal_responses_include_security_headers(monkeypatch) -> None:
     assert response.headers["cache-control"] == "no-store"
 
 
-def test_readiness_fails_closed_without_fixture_or_datahub(monkeypatch, tmp_path) -> None:
-    monkeypatch.setenv("DEMO_FIXTURE_ROOT", str(tmp_path / "missing-fixture"))
-    monkeypatch.delenv("DATAHUB_TOKEN", raising=False)
+def test_readiness_fails_closed_without_fixture_or_datahub(tmp_path) -> None:
+    async def failed_probe(_settings):
+        return DataHubCapabilityStatus(
+            ready=False,
+            gms="disconnected",
+            mcp="unverified",
+            catalog="unverified",
+            capabilities=[],
+            blocker="DataHub is unavailable",
+        )
 
+    app = create_app(
+        _settings(demo_fixture_root=tmp_path / "missing-fixture"),
+        services=_services_with_probe(failed_probe),
+    )
     response = TestClient(app).get("/api/readiness")
 
     assert response.status_code == 503
@@ -58,13 +116,10 @@ def test_readiness_fails_closed_without_fixture_or_datahub(monkeypatch, tmp_path
     assert response.json()["checks"]["fixture"] == "missing"
 
 
-def test_readiness_returns_503_for_verified_soft_reset_state(monkeypatch, tmp_path) -> None:
-    fixture = tmp_path / "forget-me-graph"
-    fixture.mkdir()
-    (fixture / ".forgetmegraph-demo").write_text("synthetic disposable demo artifacts\n")
-    monkeypatch.setenv("DEMO_FIXTURE_ROOT", str(fixture))
+def test_readiness_returns_503_for_verified_soft_reset_state(tmp_path) -> None:
+    fixture = _seeded_fixture(tmp_path)
 
-    async def reset_catalog_probe(settings):
+    async def reset_catalog_probe(_settings):
         return DataHubCapabilityStatus(
             ready=False,
             gms="connected",
@@ -74,8 +129,10 @@ def test_readiness_returns_503_for_verified_soft_reset_state(monkeypatch, tmp_pa
             blocker="DataHub catalog allocation is not seeded or valid",
         )
 
-    monkeypatch.setattr("forgetmegraph.api.probe_datahub", reset_catalog_probe)
-
+    app = create_app(
+        _settings(demo_fixture_root=fixture),
+        services=_services_with_probe(reset_catalog_probe),
+    )
     response = TestClient(app).get("/api/readiness")
 
     assert response.status_code == 503
@@ -84,22 +141,12 @@ def test_readiness_returns_503_for_verified_soft_reset_state(monkeypatch, tmp_pa
     assert response.json()["blockers"] == ["DataHub catalog allocation is not seeded or valid"]
 
 
-def test_readiness_performs_live_capability_probe(monkeypatch, tmp_path) -> None:
-    fixture = tmp_path / "forget-me-graph"
-    fixture.mkdir()
-    (fixture / ".forgetmegraph-demo").write_text("synthetic disposable demo artifacts\n")
-    monkeypatch.setenv("DEMO_FIXTURE_ROOT", str(fixture))
-
-    async def successful_probe(settings):
-        return DataHubCapabilityStatus(
-            ready=True,
-            gms="connected",
-            mcp="connected",
-            catalog="ready",
-            capabilities=["get_entities", "get_lineage"],
-        )
-
-    monkeypatch.setattr("forgetmegraph.api.probe_datahub", successful_probe)
+def test_readiness_performs_live_capability_probe(tmp_path) -> None:
+    fixture = _seeded_fixture(tmp_path)
+    app = create_app(
+        _settings(demo_fixture_root=fixture),
+        services=_services_with_probe(_successful_probe),
+    )
 
     response = TestClient(app).get("/api/readiness")
 
@@ -114,59 +161,23 @@ def test_readiness_performs_live_capability_probe(monkeypatch, tmp_path) -> None
     ]
 
 
-def _configure_other_readiness_gates(monkeypatch, tmp_path) -> None:
-    fixture = tmp_path / "forget-me-graph"
-    fixture.mkdir()
-    (fixture / ".forgetmegraph-demo").write_text("synthetic disposable demo artifacts\n")
-    monkeypatch.setenv("DEMO_FIXTURE_ROOT", str(fixture))
-
-    async def successful_probe(settings):
-        return DataHubCapabilityStatus(
-            ready=True,
-            gms="connected",
-            mcp="connected",
-            catalog="ready",
-            capabilities=["get_entities", "get_lineage"],
-        )
-
-    monkeypatch.setattr("forgetmegraph.api.probe_datahub", successful_probe)
+@pytest.mark.parametrize("invalid_secret", [None, "fifteen-chars!!"])
+def test_nonlocal_app_creation_rejects_missing_or_short_selector_secret(invalid_secret) -> None:
+    with pytest.raises(ConfigurationError, match="FMG_SELECTOR_SECRET|non-local"):
+        _production_settings(selector_secret=invalid_secret)
 
 
-def test_readiness_fails_closed_without_nonlocal_selector_secret(monkeypatch, tmp_path) -> None:
-    _configure_other_readiness_gates(monkeypatch, tmp_path)
-    monkeypatch.setenv("APP_ENV", "production")
-    monkeypatch.delenv("FMG_SELECTOR_SECRET", raising=False)
-
-    response = TestClient(app).get("/api/readiness")
-
-    assert response.status_code == 503
-    assert response.json()["ready"] is False
-    assert response.json()["checks"]["selector_protection"] == "missing_or_invalid"
-    assert response.json()["blockers"] == ["selector protection is missing or invalid"]
-
-
-def test_readiness_fails_closed_for_short_selector_secret(monkeypatch, tmp_path) -> None:
-    _configure_other_readiness_gates(monkeypatch, tmp_path)
-    invalid_secret = "fifteen-chars!!"
-    assert len(invalid_secret) == 15
-    monkeypatch.setenv("APP_ENV", "production")
-    monkeypatch.setenv("FMG_SELECTOR_SECRET", invalid_secret)
-
-    response = TestClient(app).get("/api/readiness")
-
-    assert response.status_code == 503
-    assert response.json()["ready"] is False
-    assert response.json()["checks"]["selector_protection"] == "missing_or_invalid"
-    assert response.json()["blockers"] == ["selector protection is missing or invalid"]
-    assert invalid_secret not in response.text
-
-
-def test_readiness_accepts_minimum_valid_selector_secret(monkeypatch, tmp_path) -> None:
-    _configure_other_readiness_gates(monkeypatch, tmp_path)
+def test_readiness_accepts_minimum_valid_selector_secret(tmp_path) -> None:
     minimum_valid_secret = "sixteen-chars!!!"
     assert len(minimum_valid_secret) == 16
-    monkeypatch.setenv("APP_ENV", "production")
-    monkeypatch.setenv("FMG_SELECTOR_SECRET", minimum_valid_secret)
+    fixture = _seeded_fixture(tmp_path)
+    app = create_app(
+        _production_settings(
+            selector_secret=minimum_valid_secret,
+            demo_fixture_root=fixture,
+        ),
+        services=_services_with_probe(_successful_probe),
+    )
 
     response = TestClient(app).get("/api/readiness")
 
@@ -177,15 +188,18 @@ def test_readiness_accepts_minimum_valid_selector_secret(monkeypatch, tmp_path) 
     assert minimum_valid_secret not in response.text
 
 
-@pytest.mark.parametrize("app_env", ["local", "test"])
-def test_readiness_accepts_local_test_demo_secret_fallback(
-    monkeypatch,
-    tmp_path,
-    app_env,
-) -> None:
-    _configure_other_readiness_gates(monkeypatch, tmp_path)
-    monkeypatch.setenv("APP_ENV", app_env)
-    monkeypatch.delenv("FMG_SELECTOR_SECRET", raising=False)
+@pytest.mark.parametrize("app_env", [AppEnvironment.LOCAL, AppEnvironment.TEST])
+def test_readiness_accepts_local_test_demo_secret_fallback(tmp_path, app_env) -> None:
+    fixture = _seeded_fixture(tmp_path)
+    app = create_app(
+        replace(
+            BASE_SETTINGS,
+            app_env=app_env,
+            selector_secret=None,
+            demo_fixture_root=fixture,
+        ),
+        services=_services_with_probe(_successful_probe),
+    )
 
     response = TestClient(app).get("/api/readiness")
 
@@ -195,21 +209,9 @@ def test_readiness_accepts_local_test_demo_secret_fallback(
     assert response.json()["blockers"] == []
 
 
-@pytest.mark.parametrize("app_env", ["local", "test"])
-def test_readiness_does_not_mask_explicit_invalid_local_test_secret(
-    monkeypatch,
-    tmp_path,
-    app_env,
-) -> None:
-    _configure_other_readiness_gates(monkeypatch, tmp_path)
+@pytest.mark.parametrize("app_env", [AppEnvironment.LOCAL, AppEnvironment.TEST])
+def test_local_test_app_creation_rejects_explicit_invalid_secret(app_env) -> None:
     invalid_secret = "too-short"
-    monkeypatch.setenv("APP_ENV", app_env)
-    monkeypatch.setenv("FMG_SELECTOR_SECRET", invalid_secret)
 
-    response = TestClient(app).get("/api/readiness")
-
-    assert response.status_code == 503
-    assert response.json()["ready"] is False
-    assert response.json()["checks"]["selector_protection"] == "missing_or_invalid"
-    assert response.json()["blockers"] == ["selector protection is missing or invalid"]
-    assert invalid_secret not in response.text
+    with pytest.raises(ConfigurationError, match="FMG_SELECTOR_SECRET"):
+        replace(BASE_SETTINGS, app_env=app_env, selector_secret=invalid_secret)

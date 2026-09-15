@@ -16,6 +16,7 @@ from sklearn.feature_extraction.text import HashingVectorizer
 from sklearn.linear_model import LogisticRegression
 
 from forgetmegraph.domain.models import SubjectSelector
+from forgetmegraph.errors import PolicyViolation
 from forgetmegraph.privacy.selector import SelectorProtector
 
 DEMO_SECRET = "forgetmegraph-demo-secret-change-me"
@@ -56,7 +57,7 @@ def _safe_prepare_root(root: Path) -> Path:
         marker = root / MARKER
         if not marker.exists():
             if any(root.iterdir()):
-                raise ValueError(f"refusing to replace unmarked artifact directory: {root}")
+                raise PolicyViolation(f"refusing to replace unmarked artifact directory: {root}")
         else:
             shutil.rmtree(root)
     root.mkdir(parents=True, exist_ok=True)

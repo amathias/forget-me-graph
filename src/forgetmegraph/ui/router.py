@@ -13,15 +13,14 @@ from fastapi import Path as ApiPath
 from fastapi.responses import FileResponse
 from pydantic import AliasChoices, BaseModel, ConfigDict, Field
 
-from forgetmegraph.config import Settings
-from forgetmegraph.context.datahub import DataHubIntegrationError
+from forgetmegraph.config import AppEnvironment, Settings
 from forgetmegraph.demo.seed import DEMO_SECRET
-from forgetmegraph.demo.workflow import prepare_demo_workflow, run_workflow
+from forgetmegraph.errors import PolicyViolation
+from forgetmegraph.services import ApplicationServices
 from forgetmegraph.ui.abuse import DemoAbuseGuard, DemoCapacityError
 
 router = APIRouter()
 UI_DIR = Path(__file__).resolve().parent
-_demo_guard = DemoAbuseGuard()
 _SAFE_REQUEST_ID = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{2,79}$")
 _ALLOWED_EVIDENCE_FILES = frozenset(
     {
@@ -56,7 +55,19 @@ class DemoRunRequest(DemoPlanRequest):
 
 
 def _public_controls_enabled(settings: Settings) -> bool:
-    return settings.app_env not in {"local", "test"}
+    return settings.app_env not in {AppEnvironment.LOCAL, AppEnvironment.TEST}
+
+
+def _app_settings(request: Request) -> Settings:
+    return request.app.state.settings
+
+
+def _app_services(request: Request) -> ApplicationServices:
+    return request.app.state.services
+
+
+def _app_guard(request: Request) -> DemoAbuseGuard:
+    return request.app.state.demo_guard
 
 
 def _client_key(request: Request) -> str:
@@ -90,13 +101,12 @@ def _project_root() -> Path:
     raise RuntimeError("project metadata is unavailable")
 
 
-def _selector_secret() -> str:
-    settings = Settings.from_env()
+def _selector_secret(settings: Settings) -> str:
     if settings.selector_secret:
         return settings.selector_secret
-    if settings.app_env in {"local", "test"}:
+    if settings.app_env in {AppEnvironment.LOCAL, AppEnvironment.TEST}:
         return DEMO_SECRET
-    raise RuntimeError("selector protection is not configured")
+    raise PolicyViolation("selector protection is not configured")
 
 
 def _load_json(path: Path) -> object:
@@ -218,10 +228,11 @@ def demo_overview() -> dict[str, object]:
 
 @router.post("/api/demo/plan")
 def demo_plan(payload: DemoPlanRequest, request: Request) -> dict[str, object]:
-    settings = Settings.from_env()
+    settings = _app_settings(request)
+    services = _app_services(request)
     if _public_controls_enabled(settings):
         try:
-            _demo_guard.admit_plan(
+            _app_guard(request).admit_plan(
                 _client_key(request),
                 client_limit=settings.demo_plan_client_limit_per_minute,
                 global_limit=settings.demo_plan_global_limit_per_minute,
@@ -229,17 +240,12 @@ def demo_plan(payload: DemoPlanRequest, request: Request) -> dict[str, object]:
         except DemoCapacityError as exc:
             raise _capacity_error(exc) from exc
     _require_public_selector(settings, payload.selector_value)
-    try:
-        prepared = prepare_demo_workflow(
-            project_root=_project_root(),
-            request_id=payload.request_id,
-            selector_value=payload.selector_value,
-            selector_secret=_selector_secret(),
-        )
-    except Exception as exc:
-        raise HTTPException(
-            status_code=400, detail="the deterministic plan could not be built"
-        ) from exc
+    prepared = services.prepare_workflow(
+        project_root=_project_root(),
+        request_id=payload.request_id,
+        selector_value=payload.selector_value,
+        selector_secret=_selector_secret(settings),
+    )
 
     artifact_by_urn = {artifact.urn: artifact for artifact in prepared.artifacts}
     decisions = []
@@ -277,47 +283,44 @@ def demo_plan(payload: DemoPlanRequest, request: Request) -> dict[str, object]:
 async def demo_run(payload: DemoRunRequest, request: Request) -> dict[str, object]:
     if not payload.confirmed:
         raise HTTPException(status_code=403, detail="explicit plan confirmation is required")
-    settings = Settings.from_env()
+    settings = _app_settings(request)
+    services = _app_services(request)
+    guard = _app_guard(request)
     _require_public_selector(settings, payload.selector_value)
     controls_enabled = _public_controls_enabled(settings)
     try:
         if controls_enabled:
-            _demo_guard.begin_run(
+            guard.begin_run(
                 _client_key(request),
                 client_limit=settings.demo_run_client_limit_per_ten_minutes,
                 global_limit=settings.demo_run_global_limit_per_ten_minutes,
                 cooldown_seconds=settings.demo_run_cooldown_seconds,
             )
         else:
-            _demo_guard.begin_unrestricted_run()
+            guard.begin_unrestricted_run()
     except DemoCapacityError as exc:
         raise _capacity_error(exc) from exc
 
-    require_datahub = payload.require_datahub or settings.app_env not in {"local", "test"}
+    require_datahub = payload.require_datahub or settings.app_env not in {
+        AppEnvironment.LOCAL,
+        AppEnvironment.TEST,
+    }
     try:
         certificate = await asyncio.to_thread(
-            run_workflow,
+            services.run_workflow,
             root=settings.demo_fixture_root,
             project_root=_project_root(),
             confirmed_by=payload.confirmed_by,
             request_id=payload.request_id,
             selector_value=payload.selector_value,
-            selector_secret=_selector_secret(),
+            selector_secret=_selector_secret(settings),
             expected_plan_hash=payload.plan_hash,
             seed=payload.reset_synthetic_estate,
             require_datahub=require_datahub,
             settings=settings,
         )
-    except DataHubIntegrationError as exc:
-        raise HTTPException(status_code=503, detail="the live DataHub gate failed closed") from exc
-    except ValueError as exc:
-        if "plan hash" in str(exc):
-            raise HTTPException(status_code=409, detail="the confirmed plan is stale") from exc
-        raise HTTPException(status_code=400, detail="the confirmed workflow was refused") from exc
-    except Exception as exc:
-        raise HTTPException(status_code=500, detail="the workflow failed closed") from exc
     finally:
-        _demo_guard.finish_run()
+        guard.finish_run()
 
     evidence_dir = settings.demo_fixture_root.resolve() / "evidence" / certificate.request_id
     return {
@@ -335,12 +338,13 @@ async def demo_run(payload: DemoRunRequest, request: Request) -> dict[str, objec
 
 @router.get("/api/demo/evidence/{request_id}/{file_name}")
 def download_evidence(
+    request: Request,
     request_id: Annotated[str, ApiPath(pattern=r"^[A-Za-z0-9][A-Za-z0-9._-]{2,79}$")],
     file_name: str,
 ) -> FileResponse:
     if not _SAFE_REQUEST_ID.fullmatch(request_id) or file_name not in _ALLOWED_EVIDENCE_FILES:
         raise HTTPException(status_code=404, detail="evidence file not found")
-    path = Settings.from_env().demo_fixture_root.resolve() / "evidence" / request_id / file_name
+    path = _app_settings(request).demo_fixture_root.resolve() / "evidence" / request_id / file_name
     if not path.is_file():
         raise HTTPException(status_code=404, detail="evidence file not found")
     media_type = "application/json" if file_name.endswith(".json") else "text/markdown"

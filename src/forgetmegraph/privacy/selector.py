@@ -8,9 +8,10 @@ from hashlib import sha256
 from cryptography.fernet import Fernet, InvalidToken
 
 from forgetmegraph.domain.models import ProtectedSelector, SubjectSelector
+from forgetmegraph.errors import PolicyViolation
 
 
-class SelectorProtectionError(ValueError):
+class SelectorProtectionError(PolicyViolation):
     pass
 
 

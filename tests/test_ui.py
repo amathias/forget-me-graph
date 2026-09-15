@@ -1,15 +1,37 @@
+from dataclasses import replace
 from datetime import UTC, datetime
 from pathlib import Path
 from types import SimpleNamespace
 
+import pytest
 from fastapi.testclient import TestClient
 
-from forgetmegraph.api import app
-from forgetmegraph.ui.router import DemoRunRequest, _demo_guard
+from forgetmegraph.api import create_app
+from forgetmegraph.config import AppEnvironment, ConfigurationError, Settings
+from forgetmegraph.services import default_application_services
+from forgetmegraph.ui.router import DemoRunRequest
+
+BASE_SETTINGS = Settings.from_env()
 
 
-def _client() -> TestClient:
-    return TestClient(app)
+def _settings(**changes) -> Settings:
+    return replace(BASE_SETTINGS, app_env=AppEnvironment.TEST, **changes)
+
+
+def _production_settings(**changes) -> Settings:
+    values = {
+        "app_env": AppEnvironment.PRODUCTION,
+        "selector_secret": "production-ui-test-secret",
+        "datahub_gms_url": "https://datahub.example.test",
+        "datahub_mcp_url": "https://datahub.example.test/mcp",
+        "datahub_token": "test-only-token",
+    }
+    values.update(changes)
+    return replace(BASE_SETTINGS, **values)
+
+
+def _client(settings: Settings | None = None, *, services=None) -> TestClient:
+    return TestClient(create_app(settings or _settings(), services=services))
 
 
 def _plan_request(selector_value: str = "42") -> dict[str, str]:
@@ -64,7 +86,6 @@ def test_judge_console_serves_local_assets_and_exact_graph() -> None:
 
 def test_demo_plan_returns_only_protected_selector_and_bound_hash() -> None:
     selector_value = "731947"
-
     response = _client().post("/api/demo/plan", json=_plan_request(selector_value))
 
     assert response.status_code == 200
@@ -79,7 +100,6 @@ def test_demo_plan_returns_only_protected_selector_and_bound_hash() -> None:
 
 def test_validation_error_does_not_echo_rejected_selector() -> None:
     raw_value = "private-selector-do-not-echo"
-
     response = _client().post("/api/demo/plan", json=_plan_request(raw_value))
 
     assert response.status_code == 422
@@ -87,13 +107,11 @@ def test_validation_error_does_not_echo_rejected_selector() -> None:
     assert raw_value not in response.text
 
 
-def test_demo_run_requires_explicit_plan_confirmation(monkeypatch, tmp_path: Path) -> None:
+def test_demo_run_requires_explicit_plan_confirmation(tmp_path: Path) -> None:
     fixture_root = tmp_path / "fixture"
-    monkeypatch.setenv("APP_ENV", "test")
-    monkeypatch.setenv("DEMO_FIXTURE_ROOT", str(fixture_root))
-    plan = _client().post("/api/demo/plan", json=_plan_request()).json()
-
-    response = _client().post(
+    client = _client(_settings(demo_fixture_root=fixture_root))
+    plan = client.post("/api/demo/plan", json=_plan_request()).json()
+    response = client.post(
         "/api/demo/run",
         json={
             **_plan_request(),
@@ -123,12 +141,9 @@ def test_demo_run_accepts_legacy_approval_field_names() -> None:
     assert payload.confirmed is True
 
 
-def test_stale_plan_is_rejected_before_fixture_reset(monkeypatch, tmp_path: Path) -> None:
+def test_stale_plan_is_rejected_before_fixture_reset(tmp_path: Path) -> None:
     fixture_root = tmp_path / "fixture"
-    monkeypatch.setenv("APP_ENV", "test")
-    monkeypatch.setenv("DEMO_FIXTURE_ROOT", str(fixture_root))
-
-    response = _client().post(
+    response = _client(_settings(demo_fixture_root=fixture_root)).post(
         "/api/demo/run",
         json={
             **_plan_request(),
@@ -145,16 +160,10 @@ def test_stale_plan_is_rejected_before_fixture_reset(monkeypatch, tmp_path: Path
     assert not fixture_root.exists()
 
 
-def test_local_confirmed_run_returns_and_downloads_redacted_evidence(
-    monkeypatch,
-    tmp_path: Path,
-) -> None:
+def test_local_confirmed_run_returns_and_downloads_redacted_evidence(tmp_path: Path) -> None:
     fixture_root = tmp_path / "fixture"
-    monkeypatch.setenv("APP_ENV", "test")
-    monkeypatch.setenv("DEMO_FIXTURE_ROOT", str(fixture_root))
-    client = _client()
+    client = _client(_settings(demo_fixture_root=fixture_root))
     plan = client.post("/api/demo/plan", json=_plan_request()).json()
-
     response = client.post(
         "/api/demo/run",
         json={
@@ -188,37 +197,34 @@ def test_local_confirmed_run_returns_and_downloads_redacted_evidence(
     assert not (fixture_root / "evidence" / "ui-safety-test" / "selector.json").exists()
 
 
-def test_evidence_download_rejects_unallowlisted_paths(monkeypatch, tmp_path: Path) -> None:
-    monkeypatch.setenv("DEMO_FIXTURE_ROOT", str(tmp_path))
-
-    response = _client().get("/api/demo/evidence/ui-safety-test/selector.json")
+def test_evidence_download_rejects_unallowlisted_paths(tmp_path: Path) -> None:
+    response = _client(_settings(demo_fixture_root=tmp_path)).get(
+        "/api/demo/evidence/ui-safety-test/selector.json"
+    )
 
     assert response.status_code == 404
 
 
-def test_nonlocal_ui_run_cannot_disable_live_datahub_gate(monkeypatch, tmp_path: Path) -> None:
+def test_nonlocal_ui_run_cannot_disable_live_datahub_gate(tmp_path: Path) -> None:
     fixture_root = tmp_path / "fixture"
-    monkeypatch.setenv("APP_ENV", "production")
-    monkeypatch.setenv("FMG_SELECTOR_SECRET", "production-ui-test-secret")
-    monkeypatch.setenv("DEMO_FIXTURE_ROOT", str(fixture_root))
-    plan = _client().post("/api/demo/plan", json=_plan_request()).json()
     observed: dict[str, object] = {}
 
     def fake_run_workflow(**kwargs):
         observed.update(kwargs)
         return SimpleNamespace(
             request_id=kwargs["request_id"],
-            selector_token=plan["selector"]["token"],
-            plan_hash=plan["plan_hash"],
+            selector_token="subj_protected",
+            plan_hash=kwargs["expected_plan_hash"],
             status=SimpleNamespace(value="verified"),
             certificate_hash="f" * 64,
             generated_at=datetime.now(UTC),
             items=[],
         )
 
-    monkeypatch.setattr("forgetmegraph.ui.router.run_workflow", fake_run_workflow)
-
-    response = _client().post(
+    services = replace(default_application_services(), run_workflow=fake_run_workflow)
+    client = _client(_production_settings(demo_fixture_root=fixture_root), services=services)
+    plan = client.post("/api/demo/plan", json=_plan_request()).json()
+    response = client.post(
         "/api/demo/run",
         json={
             **_plan_request(),
@@ -235,23 +241,16 @@ def test_nonlocal_ui_run_cannot_disable_live_datahub_gate(monkeypatch, tmp_path:
     assert observed["confirmed_by"] == "test-privacy-operator"
 
 
-def test_nonlocal_plan_fails_closed_without_selector_secret(monkeypatch) -> None:
-    monkeypatch.setenv("APP_ENV", "production")
-    monkeypatch.delenv("FMG_SELECTOR_SECRET", raising=False)
-
-    response = _client().post("/api/demo/plan", json=_plan_request())
-
-    assert response.status_code == 400
-    assert response.json() == {"detail": "the deterministic plan could not be built"}
-    assert "selector protection" not in response.text
+def test_nonlocal_app_creation_fails_without_selector_secret() -> None:
+    with pytest.raises(ConfigurationError, match="non-local"):
+        _production_settings(selector_secret=None)
 
 
-def test_public_plan_rejects_any_selector_outside_fixed_synthetic_subject(monkeypatch) -> None:
-    _demo_guard.reset()
-    monkeypatch.setenv("APP_ENV", "production")
-    monkeypatch.setenv("FMG_SELECTOR_SECRET", "production-ui-test-secret")
-
-    response = _client().post("/api/demo/plan", json=_plan_request("41"))
+def test_public_plan_rejects_any_selector_outside_fixed_synthetic_subject() -> None:
+    response = _client(_production_settings()).post(
+        "/api/demo/plan",
+        json=_plan_request("41"),
+    )
 
     assert response.status_code == 400
     assert response.json() == {
@@ -259,12 +258,8 @@ def test_public_plan_rejects_any_selector_outside_fixed_synthetic_subject(monkey
     }
 
 
-def test_public_plan_returns_retry_after_when_client_limit_is_reached(monkeypatch) -> None:
-    _demo_guard.reset()
-    monkeypatch.setenv("APP_ENV", "production")
-    monkeypatch.setenv("FMG_SELECTOR_SECRET", "production-ui-test-secret")
-    monkeypatch.setenv("DEMO_PLAN_CLIENT_LIMIT_PER_MINUTE", "1")
-    client = _client()
+def test_public_plan_returns_retry_after_when_client_limit_is_reached() -> None:
+    client = _client(_production_settings(demo_plan_client_limit_per_minute=1))
 
     assert client.post("/api/demo/plan", json=_plan_request()).status_code == 200
     response = client.post("/api/demo/plan", json=_plan_request())

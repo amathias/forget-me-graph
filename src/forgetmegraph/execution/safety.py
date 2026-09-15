@@ -3,10 +3,11 @@ from pathlib import Path
 from forgetmegraph.context.namespace import dataset_urn_is_namespaced
 from forgetmegraph.demo.seed import MARKER
 from forgetmegraph.domain.models import ActionPlan
+from forgetmegraph.errors import PolicyViolation
 from forgetmegraph.execution.models import PlanConfirmation
 
 
-class SafetyViolation(ValueError):
+class SafetyViolation(PolicyViolation):
     pass
 
 

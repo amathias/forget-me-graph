@@ -12,6 +12,7 @@ from pydantic import BaseModel, ConfigDict
 from forgetmegraph.config import Settings
 from forgetmegraph.context.namespace import dataset_urn_is_namespaced
 from forgetmegraph.domain.models import ActionPlan
+from forgetmegraph.errors import IntegrationFailure
 from forgetmegraph.verification.certificate import EvidenceCertificate
 
 REQUIRED_MCP_TOOLS = frozenset({"get_entities", "get_lineage"})
@@ -19,7 +20,7 @@ DATASET_URN_PREFIX = "urn:li:dataset:"
 WRITE_PROPERTY_PREFIX = "forgetme."
 
 
-class DataHubIntegrationError(RuntimeError):
+class DataHubIntegrationError(IntegrationFailure):
     """Privacy-safe integration failure; messages never contain credentials or selectors."""
 
 

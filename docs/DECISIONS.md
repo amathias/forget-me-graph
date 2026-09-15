@@ -125,11 +125,12 @@ mistaken for executed proof. Operational evidence remains under configured runti
 
 **Status:** Accepted
 
-Non-local readiness validates `FMG_SELECTOR_SECRET` with the same minimum-length contract used by
-`SelectorProtector`, but it does not derive a key, hash, log, persist, or return the value. Missing
-or invalid configuration reports only `selector_protection=missing_or_invalid` and HTTP 503. An
-absent secret in local/test mode uses the existing valid synthetic demo fallback; an explicitly
-provided invalid value never falls back.
+Application creation validates `FMG_SELECTOR_SECRET` with the same minimum-length contract used by
+`SelectorProtector`, but it does not derive a key, hash, log, persist, or return the value.
+`hackathon` and `production` refuse to start when the secret or required DataHub connection values
+are missing or invalid. An absent secret in local/test mode uses the existing valid synthetic demo
+fallback; an explicitly provided invalid value never falls back. Readiness retains its
+`selector_protection` check as defense in depth for a successfully constructed application.
 
 The live integration extra pins `acryl-datahub==1.6.0.15` and `mcp==1.28.1`, the exact
 coordinator-verified client versions, so wheel and source-archive installation cannot silently
@@ -161,3 +162,19 @@ in `Z`, keys are sorted, and separators are fixed. Certificate creation immediat
 persisted JSON file, while `python -m forgetmegraph.verification.certificate <certificate.json>`
 lets an independent reader recompute and compare the same hash. The hash detects modification; it
 is not a signature, identity proof, legal ledger, or claim that the evidence store is immutable.
+
+## ADR-015: Applications capture validated settings and dependencies once
+
+**Status:** Accepted
+
+`create_app(settings, services)` constructs one FastAPI application from already validated,
+immutable settings. Request handlers read those captured settings and injected services from the
+application instance instead of reparsing the process environment. Each application also owns its
+own admission guard, so test instances and multiple in-process applications cannot share rate
+state accidentally.
+
+Expected failures use a typed `ForgetMeGraphError` hierarchy with centralized HTTP handlers.
+Stale-plan, policy, and DataHub integration statuses therefore do not depend on exception-message
+text. Unexpected faults return a generic HTTP 500 response; non-local 500 responses retain the
+same security headers as other routes. The module-level `app` is only the standard Uvicorn
+construction from the process environment.

@@ -111,6 +111,11 @@ Requirements: Python 3.12+.
 `APP_ENV` is mandatory. Supported values are `local`, `test`, `hackathon`, and `production`; a
 missing or unknown value stops startup instead of silently enabling local behavior.
 
+All settings are validated and captured once when the application is created. `hackathon` and
+`production` refuse to start unless `FMG_SELECTOR_SECRET`, `DATAHUB_GMS_URL`, `DATAHUB_MCP_URL`,
+and `DATAHUB_TOKEN` are present and valid. Invalid ports, rate limits, secrets, or HTTP(S) endpoint
+URLs also fail during application creation rather than during a request.
+
 ```powershell
 $env:APP_ENV = 'local'
 python -m pip install -e ".[dev,datahub]"
@@ -168,11 +173,12 @@ accuracy, live-context fail-closed behavior, catalog seed/reset/restore isolatio
 UI redaction, evidence-download allowlists, fixed public selector scope, admission control,
 canonical certificate verification and tamper detection, and production security headers.
 
-## Verified live proof
+## Verified hackathon-period live proof
 
-The public product is deployed at
+During hackathon judging, the functional public product was deployed at
 [forgetme.datahub-hackathon.aaronmathias.com](https://forgetme.datahub-hackathon.aaronmathias.com).
-Public-environment workflow validation proved:
+The functional runtime was retired on September 10, 2026; that hostname now serves a static
+post-hackathon demo display. The preserved public-environment workflow validation proved:
 
 - exact seed of 10 active datasets and 9 lineage edges;
 - confirmed workflow with `verified_with_limitations`;
@@ -184,7 +190,7 @@ Public-environment workflow validation proved:
 
 Public-safe hashes are in [live-evidence-summary.json](examples/live-evidence-summary.json).
 Runtime receipts, selectors, credentials, and raw MCP responses are intentionally excluded. The
-public application also includes the judge console, selector-secret readiness validation, fixed
+public application also includes the judge console, selector-secret startup validation, fixed
 public selector scope, bounded admission, hidden non-local API documentation, and production
 security headers.
 
