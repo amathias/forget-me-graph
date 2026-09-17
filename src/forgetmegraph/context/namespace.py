@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import Literal
 
 _DATASET_PREFIX = "urn:li:dataset:("
 _PLATFORM_PREFIX = "urn:li:dataPlatform:"
@@ -8,9 +9,14 @@ _PLATFORM_PREFIX = "urn:li:dataPlatform:"
 
 @dataclass(frozen=True)
 class DatasetUrn:
-    platform_urn: str
+    entity_type: Literal["dataset"]
+    platform: str
     name: str
     environment: str
+
+    @property
+    def platform_urn(self) -> str:
+        return f"{_PLATFORM_PREFIX}{self.platform}"
 
 
 def parse_dataset_urn(urn: str) -> DatasetUrn:
@@ -18,19 +24,27 @@ def parse_dataset_urn(urn: str) -> DatasetUrn:
     if not urn.startswith(_DATASET_PREFIX) or not urn.endswith(")"):
         raise ValueError("unsupported or malformed DataHub dataset URN")
     body = urn[len(_DATASET_PREFIX) : -1]
-    platform_urn, first_separator, remainder = body.partition(",")
-    name, last_separator, environment = remainder.rpartition(",")
+    components = body.split(",")
+    if len(components) != 3:
+        raise ValueError("unsupported or malformed DataHub dataset URN")
+    platform_urn, name, environment = components
+    platform = platform_urn.removeprefix(_PLATFORM_PREFIX)
     if (
-        not first_separator
-        or not last_separator
-        or not platform_urn.startswith(_PLATFORM_PREFIX)
-        or platform_urn == _PLATFORM_PREFIX
+        not platform_urn.startswith(_PLATFORM_PREFIX)
+        or not platform
+        or ":" in platform
         or not name
         or not environment
+        or any(
+            not character.isprintable() or character.isspace() or character in "()"
+            for value in components
+            for character in value
+        )
     ):
         raise ValueError("unsupported or malformed DataHub dataset URN")
     return DatasetUrn(
-        platform_urn=platform_urn,
+        entity_type="dataset",
+        platform=platform,
         name=name,
         environment=environment,
     )

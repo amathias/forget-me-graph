@@ -17,6 +17,17 @@ from forgetmegraph.verification.certificate import EvidenceCertificate
 
 REQUIRED_MCP_TOOLS = frozenset({"get_entities", "get_lineage"})
 DATASET_URN_PREFIX = "urn:li:dataset:"
+_LINEAGE_ASSET_URN_PREFIXES = (
+    DATASET_URN_PREFIX,
+    "urn:li:chart:",
+    "urn:li:dashboard:",
+    "urn:li:dataFlow:",
+    "urn:li:dataJob:",
+    "urn:li:mlFeature:",
+    "urn:li:mlFeatureTable:",
+    "urn:li:mlModel:",
+    "urn:li:mlModelGroup:",
+)
 WRITE_PROPERTY_PREFIX = "forgetme."
 
 
@@ -159,7 +170,7 @@ def _asset_urns(value: object) -> set[str]:
     elif isinstance(value, list):
         for child in value:
             found.update(_asset_urns(child))
-    elif isinstance(value, str) and value.startswith(DATASET_URN_PREFIX):
+    elif isinstance(value, str) and value.startswith(_LINEAGE_ASSET_URN_PREFIXES):
         found.add(value)
     return found
 

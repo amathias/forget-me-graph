@@ -24,10 +24,16 @@ certificates use the pseudonymous token.
 Open-source DataHub and its self-hosted MCP server provide live entity and downstream-lineage
 context. Deterministic fixture metadata still defines executable adapters and explicit selector-key
 mappings, but live MCP must prove every planned target exists in the allocated namespace and is
-reachable from the two entrypoints before execution starts. This retains deterministic action
-selection while making DataHub context a mandatory fail-closed gate in live mode. The live read
-receipt is versioned, bound to the request and plan hash, atomically persisted before guarded
-adapter execution, and included by hash in the resulting certificate.
+reachable from the two entrypoints before execution starts. The discovered entity and lineage URN
+sets must exactly equal the planned set: missing targets, unexpected datasets, foreign namespaces,
+recognized non-dataset lineage assets, and malformed dataset URNs all block before fixture reset or
+adapter execution. Dataset namespace checks parse entity type, platform, dataset name, and
+environment structurally and apply `forgetme.` only to the dataset-name component. Recognized
+chart, dashboard, data-flow/job, and ML lineage asset URNs are collected specifically so they fail
+closed at the dataset-only scope boundary rather than disappearing during response parsing. This
+retains deterministic action selection while making DataHub context a mandatory fail-closed gate in
+live mode. The live read receipt is versioned, bound to the request and plan hash, atomically
+persisted before guarded adapter execution, and included by hash in the resulting certificate.
 
 ## ADR-004: Clean retraining is not formal unlearning
 

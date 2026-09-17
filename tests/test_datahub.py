@@ -37,6 +37,16 @@ SUMMARY = (
 FEATURES = (
     "urn:li:dataset:(urn:li:dataPlatform:duckdb,forgetme.features.customer_support_profile,PROD)"
 )
+NON_DATASET_LINEAGE_ASSET_URNS = [
+    "urn:li:chart:(looker,forgetme_customer_pii)",
+    "urn:li:dashboard:(superset,forgetme_exec_pii)",
+    "urn:li:dataFlow:(airflow,forgetme_export,PROD)",
+    "urn:li:dataJob:(urn:li:dataFlow:(airflow,forgetme_export,PROD),copy_pii)",
+    "urn:li:mlFeature:(forgetme_features,pii_score)",
+    "urn:li:mlFeatureTable:(urn:li:dataPlatform:feast,forgetme_table)",
+    "urn:li:mlModel:(urn:li:dataPlatform:mlflow,forgetme.model.shadow,PROD)",
+    "urn:li:mlModelGroup:(urn:li:dataPlatform:mlflow,forgetme.group,PROD)",
+]
 
 
 class FakeMcpClient:
@@ -46,10 +56,12 @@ class FakeMcpClient:
         *,
         lineage_urns: list[str] | None = None,
         extra_entity_urn: str | None = None,
+        metadata_urns: list[str] | None = None,
     ) -> None:
         self.urns = urns
         self.lineage_urns = lineage_urns or urns
         self.extra_entity_urn = extra_entity_urn
+        self.metadata_urns = metadata_urns or []
         self.calls: list[tuple[str, dict[str, object]]] = []
 
     async def list_tools(self) -> list[str]:
@@ -61,9 +73,13 @@ class FakeMcpClient:
             urns = [*self.urns]
             if self.extra_entity_urn:
                 urns.append(self.extra_entity_urn)
-            return [{"urn": urn, "name": "project asset"} for urn in urns]
+            return [
+                *[{"urn": urn, "name": "project asset"} for urn in urns],
+                {"metadata": {"references": [{"urn": urn} for urn in self.metadata_urns]}},
+            ]
         return {
-            "searchResults": [{"entity": {"urn": urn}, "degree": 1} for urn in self.lineage_urns]
+            "searchResults": [{"entity": {"urn": urn}, "degree": 1} for urn in self.lineage_urns],
+            "metadata": {"references": [{"urn": urn} for urn in self.metadata_urns]},
         }
 
 
@@ -130,6 +146,77 @@ def test_mcp_read_rejects_unplanned_in_namespace_lineage_descendant() -> None:
     )
 
     with pytest.raises(DataHubIntegrationError, match="lineage contains unplanned assets"):
+        asyncio.run(
+            reader.read_context(
+                entrypoint_urns=[CUSTOMERS],
+                expected_urns=[CUSTOMERS],
+            )
+        )
+
+
+@pytest.mark.parametrize("extra", NON_DATASET_LINEAGE_ASSET_URNS)
+def test_mcp_read_rejects_unplanned_non_dataset_lineage_descendant(extra: str) -> None:
+    reader = DataHubMcpReader(
+        namespace_prefix="forgetme.",
+        client=FakeMcpClient([CUSTOMERS], lineage_urns=[CUSTOMERS, extra]),
+    )
+
+    with pytest.raises(DataHubIntegrationError, match="unsupported or malformed"):
+        asyncio.run(
+            reader.read_context(
+                entrypoint_urns=[CUSTOMERS],
+                expected_urns=[CUSTOMERS],
+            )
+        )
+
+
+def test_mcp_read_ignores_non_asset_metadata_urns() -> None:
+    metadata_urns = [
+        "urn:li:dataPlatform:duckdb",
+        "urn:li:corpuser:privacy-operator",
+        "urn:li:tag:pii",
+        "urn:li:glossaryTerm:personal-data",
+        "urn:li:domain:privacy",
+    ]
+    reader = DataHubMcpReader(
+        namespace_prefix="forgetme.",
+        client=FakeMcpClient([CUSTOMERS], metadata_urns=metadata_urns),
+    )
+
+    receipt = asyncio.run(
+        reader.read_context(
+            entrypoint_urns=[CUSTOMERS],
+            expected_urns=[CUSTOMERS],
+        )
+    )
+
+    assert receipt.entity_urns == [CUSTOMERS]
+    assert receipt.lineage_urns == [CUSTOMERS]
+
+
+def test_mcp_read_fails_closed_when_entity_context_is_incomplete() -> None:
+    reader = DataHubMcpReader(
+        namespace_prefix="forgetme.",
+        client=FakeMcpClient([CUSTOMERS]),
+    )
+
+    with pytest.raises(DataHubIntegrationError, match="entity context is incomplete"):
+        asyncio.run(
+            reader.read_context(
+                entrypoint_urns=[CUSTOMERS],
+                expected_urns=[CUSTOMERS, TICKETS],
+            )
+        )
+
+
+def test_mcp_read_rejects_malformed_dataset_urn() -> None:
+    malformed = "urn:li:dataset:(urn:li:dataPlatform:duckdb,forgetme.raw,copy,PROD)"
+    reader = DataHubMcpReader(
+        namespace_prefix="forgetme.",
+        client=FakeMcpClient([CUSTOMERS], extra_entity_urn=malformed),
+    )
+
+    with pytest.raises(DataHubIntegrationError, match="unsupported or malformed"):
         asyncio.run(
             reader.read_context(
                 entrypoint_urns=[CUSTOMERS],
@@ -504,6 +591,65 @@ def test_live_workflow_checks_datahub_before_fixture_reset(tmp_path) -> None:
             project_root=Path(__file__).parents[1],
             confirmed_by="privacy-operator",
             request_id="req-gate-before-reset",
+            seed=True,
+            require_datahub=True,
+            settings=settings,
+        )
+
+    assert inspect_presence(root, customer_id=6 * 7) == before
+    assert sentinel.read_text(encoding="utf-8") == "prior evidence"
+
+
+@pytest.mark.parametrize(
+    ("extra", "error_pattern"),
+    [
+        (
+            "urn:li:dataset:(urn:li:dataPlatform:duckdb,forgetme.analytics.copy,PROD)",
+            "lineage contains unplanned assets",
+        ),
+        (
+            "urn:li:chart:(looker,forgetme_customer_pii)",
+            "unsupported or malformed",
+        ),
+    ],
+)
+def test_live_workflow_blocks_unplanned_descendant_before_fixture_reset(
+    monkeypatch,
+    tmp_path,
+    extra: str,
+    error_pattern: str,
+) -> None:
+    project_root = Path(__file__).parents[1]
+    expected = sorted(
+        decision.target_urn
+        for decision in workflow.prepare_demo_workflow(
+            project_root=project_root,
+            request_id="req-unplanned-descendant",
+            selector_value="42",
+            selector_secret="demo-secret-at-least-16-chars",
+        ).plan.decisions
+    )
+    client = FakeMcpClient(expected, lineage_urns=[*expected, extra])
+    monkeypatch.setattr(workflow, "StreamableHttpMcpClient", lambda **kwargs: client)
+    settings = SimpleNamespace(
+        datahub_gms_url="http://127.0.0.1:8080",
+        datahub_mcp_url="http://127.0.0.1:8000/mcp",
+        datahub_token=object(),
+        datahub_urn_prefix="forgetme.",
+    )
+    root = tmp_path / "fixtures" / "forget-me-graph"
+    before = seed_estate(root)
+    sentinel = root / "evidence" / "prior-request" / "sentinel.txt"
+    sentinel.parent.mkdir(parents=True)
+    sentinel.write_text("prior evidence", encoding="utf-8")
+
+    with pytest.raises(DataHubIntegrationError, match=error_pattern):
+        workflow.run_workflow(
+            root=root,
+            project_root=project_root,
+            confirmed_by="privacy-operator",
+            request_id="req-unplanned-descendant",
+            selector_secret="demo-secret-at-least-16-chars",
             seed=True,
             require_datahub=True,
             settings=settings,

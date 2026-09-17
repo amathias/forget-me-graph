@@ -4,7 +4,7 @@ Use this matrix in the UI, README, narration, and Devpost copy.
 
 | Claim | Evidence | Required boundary |
 |---|---|---|
-| DataHub determines live execution scope | MCP rereads all ten entities and complete downstream lineage from both raw entrypoints before adapters run; the versioned read receipt is request/plan-bound and its hash is included in the certificate | Only assets in the exact allocated catalog are covered |
+| DataHub gates the planned live execution scope | MCP requires exact equality between planned datasets and both discovered dataset sets before adapters run; missing datasets, unexpected recognized lineage assets, foreign datasets, and malformed dataset URNs block. The versioned read receipt is request/plan-bound and its hash is included in the certificate | The deterministic fixture still defines adapters and mappings; unexpected recognized lineage assets block rather than being planned automatically |
 | The system does real work | DuckDB, SQLite, CSV, snapshot, cache, vector, and model artifacts are mutated in the marked disposable fixture | Synthetic fixture only |
 | Plan confirmation gates destructive work | Execution requires an explicit operator confirmation bound to the deterministic plan SHA-256; stale hashes fail before reset | Self-asserted process-local demo interlock, not authenticated approval or enterprise IAM |
 | Results are independently verified | Fresh store queries and active-manifest checks determine certificate item status | Evidence covers implemented adapters and exact fixture |

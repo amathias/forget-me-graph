@@ -61,8 +61,10 @@ DataHub integration used by the command-line demo.
 
 ## What is real
 
-- Live open-source DataHub MCP `get_entities` and downstream `get_lineage` calls gate every planned
-  target.
+- Live open-source DataHub MCP `get_entities` and downstream `get_lineage` calls require exact
+  equality with the planned dataset target set. Missing datasets, unexpected recognized lineage
+  assets, foreign datasets, or malformed dataset URNs block before fixture reset or adapter
+  execution.
 - The versioned DataHub read receipt is bound to the request and plan hash, persisted before guarded
   adapter execution, and referenced by hash from the evidence certificate.
 - DuckDB row purge and derived/feature rebuilds execute against a marked synthetic fixture.
@@ -83,8 +85,8 @@ DataHub integration used by the command-line demo.
 - Request validation errors are generic so rejected values are not echoed.
 - Destructive execution requires explicit operator confirmation bound to the current deterministic
   plan hash. This demo confirmation is not authenticated authorization or enterprise IAM.
-- The synthetic fixture marker, exact `forgetme.` namespace, fixed target allowlists, and explicit
-  selector mappings are checked before mutation.
+- The synthetic fixture marker, structurally parsed `forgetme.` dataset-name namespace, fixed target
+  allowlists, and explicit selector mappings are checked before mutation.
 - Live environments force the DataHub read/write gate even if a client asks for local mode.
 - Evidence downloads use an exact filename allowlist and validated request IDs.
 - The hosted, unauthenticated demo accepts only synthetic subject `42`, rejects concurrent runs
