@@ -26,6 +26,29 @@ ambient-environment isolation reproduction, a direct `APP_ENV=hackathon` applica
 Ruff lint/format, JavaScript syntax, CLI help without `APP_ENV`, distribution build, and diff
 checks. It was not deployed because the functional runtime no longer exists.
 
+Remediation Batch 3 product commit `a7fe7d601f22cfc974e8af1ce6213c54a343be5f` was independently
+reviewed and user-approved before publication. Batch 1 had already introduced exact entity/lineage-
+set rejection and a shared structural namespace parser while fixing adjacent receipt and ordering
+findings. This focused successor completes the parser contract by exposing typed
+entity/platform/name/environment components, rejects ambiguous raw-comma tuple shapes, adds the
+full exact/missing/extra/foreign/malformed MCP matrix, and proves at workflow level that an
+unexpected in-namespace descendant blocks before fixture reset. Documentation now says DataHub
+gates the deterministic planned scope rather than claiming DataHub creates that plan. No runtime,
+dependency, API, fixture, DataHub operation, public URL, or deployment configuration changes.
+An independent review returned `ACCEPT WITH SMALL FIXES` after reproducing the full verification and
+found one material collector gap: recognized non-dataset lineage assets were filtered out before
+validation. The correction now collects recognized chart, dashboard, data-flow/job, and ML asset
+URNs so the dataset-only scope gate rejects them before reset. The same response applied the
+reviewer's low-risk parser hygiene: raw parentheses, whitespace/control characters, and nested
+platform URNs now fail closed, and the empty-prefix branch is tested.
+The fresh post-fix review found no P0/P1 issue. Its remaining small fixes were folded in: invisible
+control/format characters now fail closed, harmless non-asset metadata URNs have a negative
+regression test, and all eight recognized non-dataset asset prefixes are exercised.
+
+Verification passed with 120 tests at 91% coverage, 55 focused namespace/DataHub tests, Ruff
+lint/format, JavaScript syntax, both CLI help paths, distribution build, an isolated wheel import,
+and diff whitespace checks.
+
 ## 2026-07-29 public-demo boundary closeout
 
 | Field | Verified value |
