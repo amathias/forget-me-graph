@@ -26,7 +26,7 @@ ambient-environment isolation reproduction, a direct `APP_ENV=hackathon` applica
 Ruff lint/format, JavaScript syntax, CLI help without `APP_ENV`, distribution build, and diff
 checks. It was not deployed because the functional runtime no longer exists.
 
-Remediation Batch 3 product commit `a7fe7d601f22cfc974e8af1ce6213c54a343be5f` was independently
+Remediation Batch 3 product commit `a7fe7d6cb278bae3990b0509f6d50768b269a36c` was independently
 reviewed and user-approved before publication. Batch 1 had already introduced exact entity/lineage-
 set rejection and a shared structural namespace parser while fixing adjacent receipt and ordering
 findings. This focused successor completes the parser contract by exposing typed
